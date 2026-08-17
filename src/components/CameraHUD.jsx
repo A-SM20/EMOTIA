@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useEmotion } from '../context/EmotionContext';
-import { Camera, CameraOff, Eye, EyeOff, Shield, Activity, ScanFace } from 'lucide-react';
+import { Camera, CameraOff, Eye, EyeOff, ScanFace } from 'lucide-react';
 
 export const CameraHUD = () => {
   const { scenario, cameraActive, setCameraActive } = useEmotion();
@@ -418,25 +418,9 @@ export const CameraHUD = () => {
               </svg>
             </div>
 
-            {/* Bottom HUD info overlay: Real-time pose angles & Gaze */}
-            <div className="absolute bottom-3 left-3 bg-zinc-900/90 backdrop-blur-md px-2.5 py-1.5 rounded-md border border-white/[0.08] text-[10px] font-mono text-zinc-400 space-y-0.5">
-              <div className="flex items-center space-x-2">
-                <span className="text-zinc-300">Pitch: {pitchDeg >= 0 ? `+${pitchDeg.toFixed(1)}°` : `${pitchDeg.toFixed(1)}°`}</span>
-                <span className="text-zinc-600">|</span>
-                <span className="text-zinc-300">Yaw: {yawDeg >= 0 ? `+${yawDeg.toFixed(1)}°` : `${yawDeg.toFixed(1)}°`}</span>
-                <span className="text-zinc-600">|</span>
-                <span className="text-zinc-300">Roll: {rollDeg >= 0 ? `+${rollDeg.toFixed(1)}°` : `${rollDeg.toFixed(1)}°`}</span>
-              </div>
-              <div className="text-zinc-500 text-[9px] truncate">
-                Gaze: {scenario.modalities.facial.metric}
-              </div>
-            </div>
-
-            {/* Action Unit Live Gauge Chip on Right */}
-            <div className="absolute bottom-3 right-3 bg-zinc-900/90 backdrop-blur-md px-2 py-1 rounded-md border border-white/[0.08] text-[10px] font-mono text-zinc-300">
-              <span>AU4: {mood === 'frustrated' ? (0.87 + Math.sin(t * 3) * 0.03).toFixed(2) : '0.04'}</span>
-              <span className="mx-1 text-zinc-600">|</span>
-              <span>AU12: {mood === 'happy' ? (0.92 + Math.sin(t * 3.5) * 0.03).toFixed(2) : '0.06'}</span>
+            {/* Bottom HUD info overlay: Gaze tracking */}
+            <div className="absolute bottom-3 left-3 bg-zinc-900/90 backdrop-blur-md px-2.5 py-1 rounded-md border border-white/[0.08] text-[10px] font-mono text-zinc-400">
+              <span>Gaze: {scenario.modalities.facial.metric}</span>
             </div>
           </div>
         ) : (
@@ -478,12 +462,6 @@ export const CameraHUD = () => {
             {showMesh ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
             <span>{showMesh ? '3D Mesh ON' : '3D Mesh OFF'}</span>
           </button>
-        </div>
-
-        <div className="text-[10px] font-mono text-zinc-400 flex items-center space-x-1.5">
-          <Shield className="w-3.5 h-3.5 text-zinc-300" />
-          <span className="hidden sm:inline">Edge Privacy:</span>
-          <span className="text-zinc-200 font-medium">Local</span>
         </div>
       </div>
     </div>
