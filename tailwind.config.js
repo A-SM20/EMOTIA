@@ -8,59 +8,30 @@ export default {
   theme: {
     extend: {
       colors: {
-        background: '#080B12',
+        background: '#09090b',
         surface: {
-          DEFAULT: '#111722',
-          light: '#182234',
-          lighter: '#202D44',
-          border: '#1E293B',
+          DEFAULT: '#121215',
+          light: '#18181b',
+          lighter: '#222226',
+          border: 'rgba(255, 255, 255, 0.08)',
+          'border-hover': 'rgba(255, 255, 255, 0.16)',
         },
-        cyan: {
-          DEFAULT: '#22D3EE',
-          glow: '#06B6D4',
-          dark: '#0891B2',
-        },
-        electric: {
-          blue: '#3B82F6',
-          cyan: '#22D3EE',
-          indigo: '#6366F1',
-        },
-        emotion: {
-          positive: '#10B981',
-          neutral: '#06B6D4',
-          calm: '#38BDF8',
-          frustrated: '#F59E0B',
-          stressed: '#EF4444',
-          sad: '#8B5CF6',
-          surprised: '#EC4899',
+        zinc: {
+          850: '#1c1c20',
+          950: '#0c0c0e',
         }
       },
       fontFamily: {
-        sans: ['Space Grotesk', 'Inter', 'sans-serif'],
-        mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+        sans: ['"Plus Jakarta Sans"', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
       },
       boxShadow: {
-        'glow-cyan': '0 0 20px -3px rgba(34, 211, 238, 0.35)',
-        'glow-blue': '0 0 20px -3px rgba(59, 130, 246, 0.35)',
-        'glow-emerald': '0 0 20px -3px rgba(16, 185, 129, 0.35)',
-        'glow-amber': '0 0 20px -3px rgba(245, 158, 11, 0.35)',
-        'glow-rose': '0 0 20px -3px rgba(239, 68, 68, 0.35)',
-        'subtle-card': '0 4px 20px -2px rgba(0, 0, 0, 0.5)',
+        'subtle': '0 1px 2px 0 rgba(0, 0, 0, 0.4), 0 1px 3px 1px rgba(255, 255, 255, 0.03) inset',
+        'card': '0 4px 20px -2px rgba(0, 0, 0, 0.7), 0 1px 0 0 rgba(255, 255, 255, 0.05) inset',
+        'elevated': '0 12px 32px -4px rgba(0, 0, 0, 0.8), 0 1px 0 0 rgba(255, 255, 255, 0.08) inset',
       },
       animation: {
-        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-        'scanline': 'scanline 8s linear infinite',
-        'ripple': 'ripple 2s cubic-bezier(0, 0.2, 0.8, 1) infinite',
-      },
-      keyframes: {
-        scanline: {
-          '0%': { transform: 'translateY(-100%)' },
-          '100%': { transform: 'translateY(1000%)' },
-        },
-        ripple: {
-          '0%': { transform: 'scale(0.8)', opacity: '1' },
-          '100%': { transform: 'scale(2.2)', opacity: '0' },
-        }
+        'pulse-subtle': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
       }
     },
   },

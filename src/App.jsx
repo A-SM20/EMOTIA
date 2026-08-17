@@ -31,7 +31,7 @@ const AppContent = () => {
   };
 
   return (
-    <div className="flex h-screen w-full bg-background text-slate-100 font-sans overflow-hidden">
+    <div className="flex h-screen w-full bg-[#09090b] text-[#f4f4f5] font-sans overflow-hidden selection:bg-white/20 selection:text-white">
       {/* Left Sidebar Nav */}
       <Sidebar isCollapsed={isSidebarCollapsed} setIsCollapsed={setIsSidebarCollapsed} />
 
@@ -41,14 +41,14 @@ const AppContent = () => {
         <Header />
 
         {/* Dynamic Page Content Viewport */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 cyber-grid">
-          <div className="max-w-7xl mx-auto">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-5 lg:p-6 modern-grid">
+          <div className="max-w-6xl mx-auto">
             {renderScreen()}
           </div>
         </main>
       </div>
 
-      {/* System Settings & Demo Controls Modal */}
+      {/* System Settings & Controls Modal */}
       <SettingsModal />
     </div>
   );

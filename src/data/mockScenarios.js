@@ -4,21 +4,23 @@ export const SCENARIOS = {
     name: 'Frustrated / Debugging',
     label: 'Frustrated',
     emoji: '😤',
-    color: '#F59E0B', // Amber
-    textColor: 'text-amber-400',
-    bgColor: 'bg-amber-500/10',
-    borderColor: 'border-amber-500/30',
-    glowClass: 'glow-border-amber',
+    color: '#e4e4e7', // Clean Light Zinc
+    badgeBg: 'bg-zinc-800',
+    badgeText: 'text-zinc-100',
+    dotColor: '#f59e0b', // Subtle amber dot indicator
+    textColor: 'text-zinc-100',
+    bgColor: 'bg-zinc-900',
+    borderColor: 'border-zinc-700/60',
     confidence: 87,
-    taskContext: 'Programming • Python & PyTorch',
+    taskContext: 'Programming • PyTorch & Python',
     taskDetails: 'Refactoring cross_attention_fusion.py (3.2 hrs active)',
-    activeApp: 'VS Code - eda-core',
-    valence: -0.62, // Unpleasant
-    arousal: 0.74,  // High activation
+    activeApp: 'VS Code',
+    valence: -0.62,
+    arousal: 0.74,
     assistantMessage: "You seem frustrated with this syntax issue... would you like me to help break the problem into smaller steps or run a quick tensor shape diff check?",
     proactiveAction: "Offer automated tensor shape inspection & suggest a 5-min cognitive break",
     shortExplanation: "Detected brow lowerer (AU4) and lip corner depressor (AU15) combined with acoustic pitch spikes after 3 hours continuous coding with repeated runtime errors.",
-    detailedExplanation: "Model identified sustained Brow Lowerer (AU4, 89% intensity) and Lip Corner Depressor (AU15, 76% intensity) across the 120-frame temporal window. Concurrently, the acoustic front-end detected fundamental frequency (F0) variance spikes (+42Hz) and high vocal shimmer. The Context Engine weighted 192 minutes of uninterrupted debugging without test completion, resolving multimodal conflict toward Frustrated (87% confidence).",
+    detailedExplanation: "Model identified sustained Brow Lowerer (AU4, 89% intensity) and Lip Corner Depressor (AU15, 76% intensity) across the 120-frame temporal window. Concurrently, the acoustic front-end detected fundamental frequency variance spikes and vocal strain. The Context Engine weighted 192 minutes of uninterrupted debugging without test completion, resolving multimodal conflict toward Frustrated (87% confidence).",
     
     modalities: {
       facial: {
@@ -42,49 +44,51 @@ export const SCENARIOS = {
         architecture: 'Context-Aware Multimodal Transformer',
         confidence: 87,
         detectedUnits: ['Attention Weight Vision: 48%', 'Attention Weight Audio: 32%', 'Attention Weight Context: 20%'],
-        metric: 'Fusion latency: 12.4ms (Real-time)',
+        metric: 'Fusion latency: 12.4ms',
         status: 'Synchronized',
       }
     },
 
     emotionDistribution: [
-      { name: 'Frustrated', percentage: 87, color: '#F59E0B' },
-      { name: 'Stressed', percentage: 64, color: '#EF4444' },
-      { name: 'Sad', percentage: 22, color: '#8B5CF6' },
-      { name: 'Neutral', percentage: 12, color: '#06B6D4' },
-      { name: 'Surprised', percentage: 8, color: '#EC4899' },
-      { name: 'Calm', percentage: 5, color: '#38BDF8' },
-      { name: 'Happy', percentage: 3, color: '#10B981' },
+      { name: 'Frustrated', percentage: 87, color: '#f4f4f5' },
+      { name: 'Stressed', percentage: 64, color: '#a1a1aa' },
+      { name: 'Sad', percentage: 22, color: '#71717a' },
+      { name: 'Neutral', percentage: 12, color: '#52525b' },
+      { name: 'Surprised', percentage: 8, color: '#3f3f46' },
+      { name: 'Calm', percentage: 5, color: '#27272a' },
+      { name: 'Happy', percentage: 3, color: '#18181b' },
     ],
 
     contributingFactors: [
       { factor: 'Facial Expression (AU4 & AU15)', percentage: 38, desc: 'Prominent brow furrowing and lip compression' },
-      { factor: 'Conversation Context (3h Debugging)', percentage: 28, desc: 'Long duration with 6 consecutive failing test runs' },
+      { factor: 'Conversation Context (3h Debugging)', percentage: 28, desc: 'Long duration with consecutive failing test runs' },
       { factor: 'Acoustic Prosody & Pitch Jitter', percentage: 22, desc: 'Elevated vocal strain and sharp tone transitions' },
-      { factor: 'Previous Affective Trajectory', percentage: 12, desc: 'Transitioned from Focused/Calm -> Frustrated over 45m' },
+      { factor: 'Previous Affective Trajectory', percentage: 12, desc: 'Transitioned from Focused/Calm -> Frustrated' },
     ]
   },
 
   calm: {
     id: 'calm',
-    name: 'Calm / Deep Work Flow',
+    name: 'Calm / Deep Flow',
     label: 'Calm',
     emoji: '😌',
-    color: '#38BDF8', // Cyan / Light Blue
-    textColor: 'text-sky-400',
-    bgColor: 'bg-sky-500/10',
-    borderColor: 'border-sky-500/30',
-    glowClass: 'glow-border-cyan',
+    color: '#e4e4e7',
+    badgeBg: 'bg-zinc-800',
+    badgeText: 'text-zinc-100',
+    dotColor: '#38bdf8', // Clean sky dot
+    textColor: 'text-zinc-100',
+    bgColor: 'bg-zinc-900',
+    borderColor: 'border-zinc-700/60',
     confidence: 94,
     taskContext: 'Writing • Research Paper (LaTeX)',
     taskDetails: 'Drafting Section 4: Multimodal Attention Fusion',
-    activeApp: 'Overleaf - IEEE HRI 2026',
-    valence: 0.72,  // Pleasant
-    arousal: -0.35, // Relaxed / Stable
+    activeApp: 'Overleaf',
+    valence: 0.72,
+    arousal: -0.35,
     assistantMessage: "You're in a steady deep work flow state. I'll minimize interruptions and keep ambient desk lighting optimal.",
     proactiveAction: "Maintain silent background monitoring; suppress non-urgent notification alerts",
     shortExplanation: "Relaxed facial landmarks with optimal blink rate (14 bpm), steady vocal cadence, and smooth typing rhythm during paper drafting.",
-    detailedExplanation: "Perception inputs show neutral Corrugator supercilii relaxation and open steady eye gaze. Prosody extraction displays smooth fundamental frequency curves with zero acoustic jitter anomalies. Contextual telemetry indicates steady LaTeX compilation every 8 minutes with continuous forward progress, resulting in a robust 94% Calm/Flow prediction.",
+    detailedExplanation: "Perception inputs show neutral Corrugator supercilii relaxation and open steady eye gaze. Prosody extraction displays smooth fundamental frequency curves without jitter anomalies. Contextual telemetry indicates steady LaTeX compilation every 8 minutes with continuous forward progress, resulting in a robust 94% Calm/Flow prediction.",
 
     modalities: {
       facial: {
@@ -108,19 +112,19 @@ export const SCENARIOS = {
         architecture: 'Context-Aware Multimodal Transformer',
         confidence: 94,
         detectedUnits: ['Attention Weight Vision: 42%', 'Attention Weight Audio: 36%', 'Attention Weight Context: 22%'],
-        metric: 'Fusion latency: 9.8ms (Real-time)',
+        metric: 'Fusion latency: 9.8ms',
         status: 'Synchronized',
       }
     },
 
     emotionDistribution: [
-      { name: 'Calm', percentage: 94, color: '#38BDF8' },
-      { name: 'Neutral', percentage: 78, color: '#06B6D4' },
-      { name: 'Happy', percentage: 45, color: '#10B981' },
-      { name: 'Stressed', percentage: 8, color: '#EF4444' },
-      { name: 'Frustrated', percentage: 6, color: '#F59E0B' },
-      { name: 'Surprised', percentage: 4, color: '#EC4899' },
-      { name: 'Sad', percentage: 2, color: '#8B5CF6' },
+      { name: 'Calm', percentage: 94, color: '#f4f4f5' },
+      { name: 'Neutral', percentage: 78, color: '#a1a1aa' },
+      { name: 'Happy', percentage: 45, color: '#71717a' },
+      { name: 'Stressed', percentage: 8, color: '#52525b' },
+      { name: 'Frustrated', percentage: 6, color: '#3f3f46' },
+      { name: 'Surprised', percentage: 4, color: '#27272a' },
+      { name: 'Sad', percentage: 2, color: '#18181b' },
     ],
 
     contributingFactors: [
@@ -133,24 +137,26 @@ export const SCENARIOS = {
 
   happy: {
     id: 'happy',
-    name: 'Happy / Milestone Reached',
+    name: 'Happy / Milestone',
     label: 'Happy',
     emoji: '😊',
-    color: '#10B981', // Emerald
-    textColor: 'text-emerald-400',
-    bgColor: 'bg-emerald-500/10',
-    borderColor: 'border-emerald-500/30',
-    glowClass: 'glow-border-emerald',
+    color: '#e4e4e7',
+    badgeBg: 'bg-zinc-800',
+    badgeText: 'text-zinc-100',
+    dotColor: '#10b981', // Clean emerald dot
+    textColor: 'text-zinc-100',
+    bgColor: 'bg-zinc-900',
+    borderColor: 'border-zinc-700/60',
     confidence: 91,
     taskContext: 'Evaluation • Benchmark Pipeline',
     taskDetails: 'Ablation study completed (F1-score: 0.948)',
-    activeApp: 'JupyterLab - Evaluation.ipynb',
-    valence: 0.88,  // Very pleasant
-    arousal: 0.65,  // Energized
+    activeApp: 'JupyterLab',
+    valence: 0.88,
+    arousal: 0.65,
     assistantMessage: "Great job! Your fusion model benchmark converged with 94.8% accuracy. Would you like me to generate the ROC curve graphs for the paper?",
     proactiveAction: "Celebrate milestone achievement; offer automated figure and LaTeX table export",
     shortExplanation: "Genuine Duchenne smile (AU6 + AU12) detected alongside melodic rising vocal inflections following successful ablation experiment.",
-    detailedExplanation: "Vision sensors registered simultaneous Zygomaticus Major (AU12, 0.94) and Orbicularis Oculi (AU6, 0.88) activation, indicative of genuine positive affect. Audio feature extraction captured upward intonation contours and increased spectral power. Context integration flagged the terminal output 'Validation Accuracy: 94.8% - Exceeded Baseline', solidifying 91% Happy.",
+    detailedExplanation: "Vision sensors registered simultaneous Zygomaticus Major (AU12, 0.94) and Orbicularis Oculi (AU6, 0.88) activation, indicative of genuine positive affect. Audio feature extraction captured upward intonation contours. Context integration flagged the terminal output 'Validation Accuracy: 94.8% - Exceeded Baseline', solidifying 91% Happy.",
 
     modalities: {
       facial: {
@@ -174,49 +180,51 @@ export const SCENARIOS = {
         architecture: 'Context-Aware Multimodal Transformer',
         confidence: 91,
         detectedUnits: ['Attention Weight Vision: 52%', 'Attention Weight Audio: 30%', 'Attention Weight Context: 18%'],
-        metric: 'Fusion latency: 11.1ms (Real-time)',
+        metric: 'Fusion latency: 11.1ms',
         status: 'Synchronized',
       }
     },
 
     emotionDistribution: [
-      { name: 'Happy', percentage: 91, color: '#10B981' },
-      { name: 'Calm', percentage: 72, color: '#38BDF8' },
-      { name: 'Surprised', percentage: 54, color: '#EC4899' },
-      { name: 'Neutral', percentage: 25, color: '#06B6D4' },
-      { name: 'Stressed', percentage: 4, color: '#EF4444' },
-      { name: 'Frustrated', percentage: 2, color: '#F59E0B' },
-      { name: 'Sad', percentage: 1, color: '#8B5CF6' },
+      { name: 'Happy', percentage: 91, color: '#f4f4f5' },
+      { name: 'Calm', percentage: 72, color: '#a1a1aa' },
+      { name: 'Surprised', percentage: 54, color: '#71717a' },
+      { name: 'Neutral', percentage: 25, color: '#52525b' },
+      { name: 'Stressed', percentage: 4, color: '#3f3f46' },
+      { name: 'Frustrated', percentage: 2, color: '#27272a' },
+      { name: 'Sad', percentage: 1, color: '#18181b' },
     ],
 
     contributingFactors: [
       { factor: 'Duchenne Smile (AU6 + AU12)', percentage: 45, desc: 'Bilateral zygomatic cheek elevation and eye crinkle' },
       { factor: 'Task Success Context Signal', percentage: 25, desc: 'Model evaluation test script passed with new top metric' },
       { factor: 'Upward Vocal Energy & Pitch', percentage: 20, desc: 'Energetic acoustic peak with pleasant harmonic tone' },
-      { factor: 'Interactive Conversational Positivity', percentage: 10, desc: 'Positive sentiment detected in recent spoken query' },
+      { factor: 'Interactive Conversational Positivity', percentage: 10, desc: 'Positive sentiment detected in recent query' },
     ]
   },
 
   stressed: {
     id: 'stressed',
-    name: 'Stressed / Submission Deadline',
+    name: 'Stressed / Deadline',
     label: 'Stressed',
     emoji: '😰',
-    color: '#EF4444', // Rose/Red
-    textColor: 'text-rose-400',
-    bgColor: 'bg-rose-500/10',
-    borderColor: 'border-rose-500/30',
-    glowClass: 'glow-border-rose',
+    color: '#e4e4e7',
+    badgeBg: 'bg-zinc-800',
+    badgeText: 'text-zinc-100',
+    dotColor: '#ef4444', // Subtle red dot
+    textColor: 'text-zinc-100',
+    bgColor: 'bg-zinc-900',
+    borderColor: 'border-zinc-700/60',
     confidence: 89,
     taskContext: 'Submission • Conference Portal',
     taskDetails: 'Final PDF submission window closes in 2 hours',
-    activeApp: 'Firefox - CMT Submission System',
-    valence: -0.78, // High unpleasant
-    arousal: 0.89,  // Very high activation
+    activeApp: 'Firefox',
+    valence: -0.78,
+    arousal: 0.89,
     assistantMessage: "High stress indicators detected before the paper deadline. I have pre-checked the formatting guidelines and page limits for you.",
     proactiveAction: "Streamline secondary tasks; auto-verify PDF compliance checklist & citations",
     shortExplanation: "Rapid micro-saccades, elevated speaking rate (+35% wpm), and rapid window switching detected 120 minutes prior to paper deadline.",
-    detailedExplanation: "Perception stream detected micro-tremors in head posture, elevated blink frequency (38 bpm), and lip tightening (AU23). Speech telemetry noted a 35% increase in word rate and sharp acoustic energy peaks. The Context Engine cross-referenced the active browser tab (CMT Submission Portal, countdown: 01:54:12), classifying the state as High Stress (89% confidence).",
+    detailedExplanation: "Perception stream detected micro-tremors in head posture, elevated blink frequency (38 bpm), and lip tightening (AU23). Speech telemetry noted a 35% increase in word rate. The Context Engine cross-referenced the active browser tab (CMT Portal, countdown: 01:54:12), classifying the state as High Stress (89% confidence).",
 
     modalities: {
       facial: {
@@ -224,7 +232,7 @@ export const SCENARIOS = {
         architecture: 'Swin-Transformer FER + OpenFace 3D',
         confidence: 86,
         detectedUnits: ['AU23 (Lip Tightener: 0.84)', 'AU1 (Inner Brow Raiser: 0.79)', 'Blink Rate: 38/min (High)'],
-        metric: 'Frequent erratic ocular saccades across screens',
+        metric: 'Frequent ocular saccades across screens',
         status: 'Active',
       },
       vocal: {
@@ -240,19 +248,19 @@ export const SCENARIOS = {
         architecture: 'Context-Aware Multimodal Transformer',
         confidence: 89,
         detectedUnits: ['Attention Weight Context: 44%', 'Attention Weight Audio: 34%', 'Attention Weight Vision: 22%'],
-        metric: 'Fusion latency: 13.2ms (Real-time)',
+        metric: 'Fusion latency: 13.2ms',
         status: 'Synchronized',
       }
     },
 
     emotionDistribution: [
-      { name: 'Stressed', percentage: 89, color: '#EF4444' },
-      { name: 'Frustrated', percentage: 71, color: '#F59E0B' },
-      { name: 'Surprised', percentage: 28, color: '#EC4899' },
-      { name: 'Neutral', percentage: 18, color: '#06B6D4' },
-      { name: 'Sad', percentage: 15, color: '#8B5CF6' },
-      { name: 'Calm', percentage: 6, color: '#38BDF8' },
-      { name: 'Happy', percentage: 4, color: '#10B981' },
+      { name: 'Stressed', percentage: 89, color: '#f4f4f5' },
+      { name: 'Frustrated', percentage: 71, color: '#a1a1aa' },
+      { name: 'Surprised', percentage: 28, color: '#71717a' },
+      { name: 'Neutral', percentage: 18, color: '#52525b' },
+      { name: 'Sad', percentage: 15, color: '#3f3f46' },
+      { name: 'Calm', percentage: 6, color: '#27272a' },
+      { name: 'Happy', percentage: 4, color: '#18181b' },
     ],
 
     contributingFactors: [
@@ -265,20 +273,22 @@ export const SCENARIOS = {
 
   neutral: {
     id: 'neutral',
-    name: 'Neutral / Literature Reading',
+    name: 'Neutral / Reading',
     label: 'Neutral',
     emoji: '🧐',
-    color: '#06B6D4', // Cyan
-    textColor: 'text-cyan-400',
-    bgColor: 'bg-cyan-500/10',
-    borderColor: 'border-cyan-500/30',
-    glowClass: 'glow-border-cyan',
+    color: '#e4e4e7',
+    badgeBg: 'bg-zinc-800',
+    badgeText: 'text-zinc-100',
+    dotColor: '#a1a1aa', // Clean gray dot
+    textColor: 'text-zinc-100',
+    bgColor: 'bg-zinc-900',
+    borderColor: 'border-zinc-700/60',
     confidence: 84,
     taskContext: 'Reading • ArXiv Papers',
     taskDetails: 'Reviewing: Explainable Multimodal Affective Computing in HRI',
-    activeApp: 'Acrobat Reader - arxiv_2508.01942.pdf',
-    valence: 0.05,  // Neutral
-    arousal: 0.10,  // Neutral / baseline
+    activeApp: 'PDF Viewer',
+    valence: 0.05,
+    arousal: 0.10,
     assistantMessage: "Reviewing HRI papers. Let me know if you want a quick summary of the key findings or BibTeX citations extracted.",
     proactiveAction: "Offer smart PDF summarization & automatic reference extraction",
     shortExplanation: "Baseline facial expression without notable AU activation, moderate vocal pitch, and smooth scroll rate on academic document.",
@@ -306,19 +316,19 @@ export const SCENARIOS = {
         architecture: 'Context-Aware Multimodal Transformer',
         confidence: 84,
         detectedUnits: ['Attention Weight Vision: 38%', 'Attention Weight Context: 36%', 'Attention Weight Audio: 26%'],
-        metric: 'Fusion latency: 10.2ms (Real-time)',
+        metric: 'Fusion latency: 10.2ms',
         status: 'Synchronized',
       }
     },
 
     emotionDistribution: [
-      { name: 'Neutral', percentage: 84, color: '#06B6D4' },
-      { name: 'Calm', percentage: 68, color: '#38BDF8' },
-      { name: 'Happy', percentage: 20, color: '#10B981' },
-      { name: 'Surprised', percentage: 12, color: '#EC4899' },
-      { name: 'Stressed', percentage: 9, color: '#EF4444' },
-      { name: 'Frustrated', percentage: 8, color: '#F59E0B' },
-      { name: 'Sad', percentage: 5, color: '#8B5CF6' },
+      { name: 'Neutral', percentage: 84, color: '#f4f4f5' },
+      { name: 'Calm', percentage: 68, color: '#a1a1aa' },
+      { name: 'Happy', percentage: 20, color: '#71717a' },
+      { name: 'Surprised', percentage: 12, color: '#52525b' },
+      { name: 'Stressed', percentage: 9, color: '#3f3f46' },
+      { name: 'Frustrated', percentage: 8, color: '#27272a' },
+      { name: 'Sad', percentage: 5, color: '#18181b' },
     ],
 
     contributingFactors: [
@@ -336,13 +346,13 @@ export const INITIAL_CONVERSATIONS = [
     sender: 'user',
     text: "Can you explain why the cross-attention layer keeps throwing a tensor dimension mismatch error?",
     time: '14:22:10',
-    emotionTag: { label: 'Frustrated', confidence: 87, color: '#F59E0B' },
-    modality: 'Voice + Screen Context',
+    emotionTag: { label: 'Frustrated', confidence: 87, color: '#e4e4e7' },
+    modality: 'Voice + Screen',
   },
   {
     id: 2,
     sender: 'assistant',
-    text: "I noticed your frustration when debugging the PyTorch shapes. The visual transformer outputs [batch, 196, 768] while the audio branch outputs [batch, 128, 512]. You need a projection linear layer before the dot-product attention: `self.proj_audio = nn.Linear(512, 768)`. Would you like me to generate the fix snippet?",
+    text: "I noticed the tensor shape issue when compiling. The visual transformer outputs [batch, 196, 768] while the audio branch outputs [batch, 128, 512]. You need a projection linear layer before dot-product attention: `self.proj_audio = nn.Linear(512, 768)`. Would you like me to generate the fix snippet?",
     time: '14:22:14',
     contextTag: { task: 'Programming (PyTorch)', emotionState: 'Frustrated', proactive: true },
     recommendation: "Provided tensor dimension alignment snippet",
@@ -352,7 +362,7 @@ export const INITIAL_CONVERSATIONS = [
     sender: 'user',
     text: "That worked! The training run finally started without crashing.",
     time: '14:35:40',
-    emotionTag: { label: 'Happy', confidence: 91, color: '#10B981' },
+    emotionTag: { label: 'Happy', confidence: 91, color: '#e4e4e7' },
     modality: 'Voice Input',
   },
   {
@@ -368,7 +378,7 @@ export const INITIAL_CONVERSATIONS = [
     sender: 'user',
     text: "Can you verify if our discussion section meets the IEEE HRI 8-page formatting limit?",
     time: '15:10:15',
-    emotionTag: { label: 'Stressed', confidence: 89, color: '#EF4444' },
+    emotionTag: { label: 'Stressed', confidence: 89, color: '#e4e4e7' },
     modality: 'Text Query',
   },
   {
@@ -384,7 +394,7 @@ export const INITIAL_CONVERSATIONS = [
     sender: 'user',
     text: "Summarize the primary takeaways of the multimodal explainability paper on my screen.",
     time: '15:42:00',
-    emotionTag: { label: 'Neutral', confidence: 84, color: '#06B6D4' },
+    emotionTag: { label: 'Neutral', confidence: 84, color: '#e4e4e7' },
     modality: 'Voice Query',
   },
   {
@@ -398,59 +408,59 @@ export const INITIAL_CONVERSATIONS = [
 ];
 
 export const SYSTEM_SUBMODULES = [
-  { id: 'camera', name: 'Camera Stream', category: 'Perception', status: 'Active', latency: '12ms', color: '#10B981' },
-  { id: 'microphone', name: 'Microphone Array', category: 'Perception', status: 'Active', latency: '8ms', color: '#10B981' },
-  { id: 'face_model', name: 'Face Model (Swin-FER)', category: 'Perception', status: 'Ready', latency: '18ms', color: '#10B981' },
-  { id: 'speech_model', name: 'Speech Model (Wav2Vec2)', category: 'Perception', status: 'Ready', latency: '15ms', color: '#10B981' },
-  { id: 'fusion', name: 'Emotion Fusion (X-Attention)', category: 'Reasoning', status: 'Fused', latency: '11ms', color: '#22D3EE' },
-  { id: 'context', name: 'Context Engine', category: 'Reasoning', status: 'Connected', latency: '5ms', color: '#22D3EE' },
-  { id: 'memory', name: 'Personalized Memory', category: 'Reasoning', status: 'Ready', latency: '7ms', color: '#22D3EE' },
-  { id: 'llm', name: 'Proactive LLM Agent', category: 'Interaction', status: 'Active', latency: '120ms', color: '#3B82F6' },
-  { id: 'backend', name: 'HRI Core Backend', category: 'System', status: 'Connected', latency: '4ms', color: '#10B981' },
+  { id: 'camera', name: 'Camera Stream', category: 'Perception', status: 'Active', latency: '12ms', color: '#ffffff' },
+  { id: 'microphone', name: 'Microphone Array', category: 'Perception', status: 'Active', latency: '8ms', color: '#ffffff' },
+  { id: 'face_model', name: 'Face Model (Swin-FER)', category: 'Perception', status: 'Ready', latency: '18ms', color: '#ffffff' },
+  { id: 'speech_model', name: 'Speech Model (Wav2Vec2)', category: 'Perception', status: 'Ready', latency: '15ms', color: '#ffffff' },
+  { id: 'fusion', name: 'Emotion Fusion', category: 'Reasoning', status: 'Fused', latency: '11ms', color: '#ffffff' },
+  { id: 'context', name: 'Context Engine', category: 'Reasoning', status: 'Connected', latency: '5ms', color: '#ffffff' },
+  { id: 'memory', name: 'Personalized Memory', category: 'Reasoning', status: 'Ready', latency: '7ms', color: '#ffffff' },
+  { id: 'llm', name: 'Proactive LLM Agent', category: 'Interaction', status: 'Active', latency: '120ms', color: '#ffffff' },
+  { id: 'backend', name: 'HRI Core Backend', category: 'System', status: 'Connected', latency: '4ms', color: '#ffffff' },
 ];
 
 export const TEAM_ARCHITECTURE_MODULES = [
   {
-    step: '1. User Input & Desk Context',
+    step: '01. Input & Context',
     owner: 'Participant & Desk Setup',
-    description: 'Real-time webcam video (60 FPS), binaural microphone array, desktop telemetry (active IDE, editor, task duration).',
-    color: 'from-blue-500/20 to-cyan-500/20',
-    border: 'border-cyan-500/40',
+    description: 'Real-time webcam video (60 FPS), binaural microphone array, and desktop task telemetry (active IDE, duration).',
+    color: 'bg-zinc-900',
+    border: 'border-zinc-800',
   },
   {
-    step: '2. Multimodal Perception',
-    owner: 'Perception Team (Vision & Audio)',
-    description: 'Swin-Transformer FER extracting 18 Facial Action Units (OpenFace 3D) + Wav2Vec2 prosodic acoustic feature extractor.',
-    color: 'from-cyan-500/20 to-emerald-500/20',
-    border: 'border-emerald-500/40',
+    step: '02. Multimodal Perception',
+    owner: 'Perception (Vision & Audio)',
+    description: 'Swin-Transformer FER extracting 18 Facial Action Units + Wav2Vec2 prosodic acoustic feature extractor.',
+    color: 'bg-zinc-900',
+    border: 'border-zinc-800',
   },
   {
-    step: '3. Context & Memory Engine',
-    owner: 'Reasoning & Context Team',
-    description: 'Cross-Attention Multimodal Fusion, Dynamic Task State Tracker, Episodic & Personalized Interaction Memory bank.',
-    color: 'from-emerald-500/20 to-indigo-500/20',
-    border: 'border-indigo-500/40',
+    step: '03. Context & Memory',
+    owner: 'Reasoning & Context',
+    description: 'Cross-Attention Multimodal Fusion, Dynamic Task State Tracker, and Longitudinal Interaction Memory.',
+    color: 'bg-zinc-900',
+    border: 'border-zinc-800',
   },
   {
-    step: '4. Decision & Explainability (XAI)',
-    owner: 'XAI & Decision Team',
-    description: 'Feature attribution module computing Shapley/AU weightings and generating human-interpretable natural language rationale.',
-    color: 'from-indigo-500/20 to-purple-500/20',
-    border: 'border-purple-500/40',
+    step: '04. Decision & XAI',
+    owner: 'Explainability (XAI)',
+    description: 'Feature attribution module computing Shapley weightings and generating human-interpretable rationale.',
+    color: 'bg-zinc-900',
+    border: 'border-zinc-800',
   },
   {
-    step: '5. Proactive Desk Assistant UI',
-    owner: 'HRI Frontend & Interaction Team',
-    description: 'EMOTIA Workstation Dashboard, synthetic speech dialog, real-time emotion telemetry, adaptive recommendations.',
-    color: 'from-purple-500/20 to-blue-500/20',
-    border: 'border-blue-500/40',
+    step: '05. Assistant UI',
+    owner: 'HRI Interaction',
+    description: 'Modern Desk Assistant dashboard, proactive recommendations, speech synthesis, and real-time telemetry.',
+    color: 'bg-zinc-900',
+    border: 'border-zinc-800',
   }
 ];
 
 export const LEARNED_PREFERENCES_MOCK = [
-  { id: 1, title: "Prefers Technical & Concrete Explanations", desc: "When debugging code, prefers code diffs and tensor shape inspects over generic high-level advice.", category: "Communication Style" },
-  { id: 2, title: "Deep Work Flow Protection", desc: "Prefers silent background monitoring during writing sessions in LaTeX/Overleaf, suppressing minor notifications.", category: "Proactivity" },
-  { id: 3, title: "Frequent Evening Interactions", desc: "Most intensive research coding sessions occur between 18:00 - 23:30; assistant automatically dims interface glare.", category: "Temporal Pattern" },
-  { id: 4, title: "Concise Guidance under High Stress", desc: "During pre-deadline windows, prefers bullet points with immediate actionable fixes rather than multi-paragraph reasoning.", category: "Affective Strategy" },
-  { id: 5, title: "Primary Research Interest Tags", desc: "Frequently works on Multimodal Affective Computing, Robot-Assisted Learning, and Neuro-Symbolic XAI.", category: "Domain Knowledge" },
+  { id: 1, title: "Prefers Technical Explanations", desc: "When debugging code, prefers code diffs and tensor shape inspections over generic high-level advice.", category: "Communication" },
+  { id: 2, title: "Deep Work Flow Protection", desc: "Prefers silent background monitoring during writing sessions in LaTeX, suppressing minor notifications.", category: "Proactivity" },
+  { id: 3, title: "Evening Research Sessions", desc: "Most intensive research coding sessions occur between 18:00 - 23:30; assistant dims glare automatically.", category: "Temporal" },
+  { id: 4, title: "Concise Guidance Under Stress", desc: "During pre-deadline windows, prefers bullet points with immediate actionable fixes rather than multi-paragraph reasoning.", category: "Affective" },
+  { id: 5, title: "Domain Knowledge Focus", desc: "Frequently works on Multimodal Affective Computing, Robot-Assisted Learning, and Neuro-Symbolic XAI.", category: "Domain" },
 ];
