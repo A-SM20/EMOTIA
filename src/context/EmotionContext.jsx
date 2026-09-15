@@ -1,6 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { SCENARIOS, INITIAL_CONVERSATIONS, SYSTEM_SUBMODULES } from '../data/mockScenarios';
 
+const BACKEND_WS_URL = 'ws://localhost:8000/ws';
+const RECONNECT_DELAY_MS = 3000;
+
 const EmotionContext = createContext(null);
 
 const SCENARIO_KEYS = ['frustrated', 'calm', 'happy', 'stressed', 'neutral'];
@@ -17,6 +20,78 @@ export const EmotionProvider = ({ children }) => {
   const [conversations, setConversations] = useState(INITIAL_CONVERSATIONS);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [ttsEnabled, setTtsEnabled] = useState(true);
+
+  // ── Live Backend State ────────────────────────────────────────────────────
+  const [backendStatus, setBackendStatus] = useState('offline'); // 'connected' | 'offline'
+  const [liveData, setLiveData] = useState(null);  // raw WebSocket payload
+  const wsRef = useRef(null);
+  const reconnectTimer = useRef(null);
+
+  // WebSocket connection to FastAPI backend
+  const connectWS = useCallback(() => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) return;
+    try {
+      const ws = new WebSocket(BACKEND_WS_URL);
+      wsRef.current = ws;
+
+      ws.onopen = () => {
+        setBackendStatus('connected');
+        console.log('[EMOTIA] Backend connected ✓');
+        if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          setLiveData(data);
+
+          // Map detected emotion to a scenario key for UI consistency
+          const emotionKey = data.emotion;
+          if (SCENARIOS[emotionKey]) {
+            setCurrentScenarioKey(emotionKey);
+          }
+
+          // Push live point into emotion history
+          const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+          setEmotionHistory(prev => {
+            const updated = [...prev, {
+              time: nowTime,
+              intensity: Math.round(data.confidence * 100),
+              confidence: Math.round(data.confidence * 100),
+              valence: data.valence,
+              arousal: data.arousal,
+              emotion: emotionKey.charAt(0).toUpperCase() + emotionKey.slice(1),
+            }];
+            return updated.slice(-15);
+          });
+        } catch (e) {
+          console.warn('[EMOTIA] WS parse error:', e);
+        }
+      };
+
+      ws.onerror = () => {
+        setBackendStatus('offline');
+      };
+
+      ws.onclose = () => {
+        setBackendStatus('offline');
+        setLiveData(null);
+        // Auto-reconnect
+        reconnectTimer.current = setTimeout(connectWS, RECONNECT_DELAY_MS);
+      };
+    } catch (e) {
+      setBackendStatus('offline');
+      reconnectTimer.current = setTimeout(connectWS, RECONNECT_DELAY_MS);
+    }
+  }, []);
+
+  useEffect(() => {
+    connectWS();
+    return () => {
+      if (wsRef.current) wsRef.current.close();
+      if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
+    };
+  }, [connectWS]);
 
   // User Profile state
   const [userProfile, setUserProfile] = useState({
@@ -216,6 +291,10 @@ export const EmotionProvider = ({ children }) => {
     setSettingsOpen,
     scenarioKeys: SCENARIO_KEYS,
     allScenarios: SCENARIOS,
+    // Live backend
+    backendStatus,
+    liveData,
+    connectWS,
   };
 
   return (

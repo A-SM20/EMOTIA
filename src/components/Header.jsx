@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useEmotion } from '../context/EmotionContext';
-import { Play, Pause, Settings, Volume2, VolumeX, Clock } from 'lucide-react';
+import { Play, Pause, Settings, Volume2, VolumeX, Clock, Cpu } from 'lucide-react';
 
 export const Header = () => {
   const {
@@ -11,6 +11,7 @@ export const Header = () => {
     setTtsEnabled,
     isSpeaking,
     setSettingsOpen,
+    backendStatus,
   } = useEmotion();
 
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -55,6 +56,17 @@ export const Header = () => {
           <span className="text-zinc-200 font-medium">{scenario.label}</span>
           <span className="text-zinc-500 font-normal">({scenario.confidence}%)</span>
         </div>
+
+        {/* Backend Live Status */}
+        <div className={`hidden sm:flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-[11px] font-mono border transition-all ${
+          backendStatus === 'connected'
+            ? 'bg-emerald-950/60 text-emerald-400 border-emerald-800/50'
+            : 'bg-zinc-900 text-zinc-500 border-white/[0.08]'
+        }`}>
+          <Cpu className="w-3 h-3" />
+          <span>{backendStatus === 'connected' ? 'Live ML' : 'Mock Data'}</span>
+        </div>
+
 
         {/* Auto Cycle Simulator Toggle */}
         <button
