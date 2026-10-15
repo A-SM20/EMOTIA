@@ -1,0 +1,71 @@
+{
+  "user_id": "DR_ALEX_VANCE",
+  "preferences": [
+    {
+      "id": "pref_1",
+      "title": "Dim Amber Lighting during Cognitive Overload",
+      "category": "Workspace Environment",
+      "confidence": 94,
+      "observed_count": 18,
+      "status": "Active Policy"
+    },
+    {
+      "id": "pref_2",
+      "title": "Proactive Break Prompts at 45m Interval",
+      "category": "Health & Fatigue",
+      "confidence": 88,
+      "observed_count": 12,
+      "status": "Active Policy"
+    },
+    {
+      "id": "pref_3",
+      "title": "Suppress Peripheral Alerts during Deep Flow",
+      "category": "Interaction Pacing",
+      "confidence": 96,
+      "observed_count": 25,
+      "status": "Active Policy"
+    }
+  ],
+  "episodes": [
+    {
+      "id": "ep_1792059527",
+      "timestamp": "2026-10-15 15:48:47",
+      "task": "Test Execution",
+      "app": "PyTest",
+      "emotion": "Calm",
+      "cli": 30,
+      "summary": "Ran unit test suite successfully.",
+      "intervention": "Logged verification note"
+    },
+    {
+      "id": "ep_1",
+      "timestamp": "Yesterday, 16:45",
+      "task": "PyTorch Debugging",
+      "app": "VS Code",
+      "emotion": "Frustrated",
+      "cli": 89,
+      "summary": "Resolved CUDA out-of-memory error after 40m session. System suggested batch size reduction.",
+      "intervention": "Amber Focus lighting + automated stack trace isolation."
+    },
+    {
+      "id": "ep_2",
+      "timestamp": "Yesterday, 14:10",
+      "task": "Literature Review Writing",
+      "app": "Overleaf",
+      "emotion": "Calm",
+      "cli": 35,
+      "summary": "Steady deep writing sprint. System maintained silent daylight illumination.",
+      "intervention": "Silent focus lock."
+    },
+    {
+      "id": "ep_3",
+      "timestamp": "2 days ago, 18:20",
+      "task": "Model Evaluation",
+      "app": "Terminal",
+      "emotion": "Happy",
+      "cli": 42,
+      "summary": "Validation accuracy exceeded 91.4% benchmark on emotion dataset.",
+      "intervention": "Archived evaluation run checkpoint."
+    }
+  ]
+}

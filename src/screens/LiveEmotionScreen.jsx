@@ -23,7 +23,14 @@ import {
 } from 'recharts';
 
 export const LiveEmotionScreen = () => {
-  const { scenario, emotionHistory } = useEmotion();
+  const { scenario, emotionHistory, liveData, backendStatus } = useEmotion();
+
+  const isLive = backendStatus === 'connected' && liveData;
+  const activeLabel = isLive && liveData.emotion ? liveData.emotion.charAt(0).toUpperCase() + liveData.emotion.slice(1) : scenario.label;
+  const activeConfidence = isLive && liveData.confidence ? Math.round(liveData.confidence * 100) : scenario.confidence;
+  const activeValence = isLive && liveData.valence !== undefined ? liveData.valence : scenario.valence;
+  const activeArousal = isLive && liveData.arousal !== undefined ? liveData.arousal : scenario.arousal;
+  const activeLatency = isLive && liveData.latency_ms ? `${liveData.latency_ms}ms` : '11.2ms';
 
   return (
     <div className="space-y-5 animate-fadeIn">
@@ -40,17 +47,17 @@ export const LiveEmotionScreen = () => {
             </div>
             <div className="space-y-1">
               <div className="text-[10px] font-mono uppercase tracking-wider text-zinc-500 font-medium">
-                Fused Affect Prediction
+                Fused Affect Prediction {isLive && '• LIVE TELEMETRY'}
               </div>
               <h1 className="text-3xl font-bold tracking-tight text-white">
-                {scenario.label}
+                {activeLabel}
               </h1>
               <div className="flex items-center space-x-2 pt-0.5">
                 <span className="text-xs font-mono font-medium px-2 py-0.5 rounded-full bg-zinc-800 border border-white/[0.08] text-zinc-200">
-                  {scenario.confidence}% Confidence
+                  {activeConfidence}% Confidence
                 </span>
                 <span className="text-xs text-zinc-500 font-mono">
-                  Latency: 11.2ms
+                  Latency: {activeLatency}
                 </span>
               </div>
             </div>
@@ -73,10 +80,10 @@ export const LiveEmotionScreen = () => {
                 <span>Affect Valence</span>
               </div>
               <div className="text-base font-semibold font-mono text-zinc-100">
-                {scenario.valence > 0 ? `+${scenario.valence}` : scenario.valence}
+                {activeValence > 0 ? `+${activeValence}` : activeValence}
               </div>
               <div className="text-[10px] text-zinc-500 font-mono">
-                {scenario.valence >= 0.3 ? 'Positive' : scenario.valence <= -0.3 ? 'Negative' : 'Equilibrium'}
+                {activeValence >= 0.3 ? 'Positive' : activeValence <= -0.3 ? 'Negative' : 'Equilibrium'}
               </div>
             </div>
 
@@ -86,10 +93,10 @@ export const LiveEmotionScreen = () => {
                 <span>Arousal Level</span>
               </div>
               <div className="text-base font-semibold font-mono text-zinc-100">
-                {scenario.arousal > 0 ? `+${scenario.arousal}` : scenario.arousal}
+                {activeArousal > 0 ? `+${activeArousal}` : activeArousal}
               </div>
               <div className="text-[10px] text-zinc-500 font-mono">
-                {scenario.arousal >= 0.4 ? 'High Activation' : scenario.arousal <= -0.2 ? 'Relaxed' : 'Moderate'}
+                {activeArousal >= 0.4 ? 'High Activation' : activeArousal <= -0.2 ? 'Relaxed' : 'Moderate'}
               </div>
             </div>
           </div>

@@ -1,0 +1,28 @@
+{
+  "user_id": "REVIEW1_VERIFY_USER",
+  "timestamp": 1792059551.8528972,
+  "calibration_samples": 1,
+  "baseline_means": {
+    "AU4": 0.06791,
+    "AU12": 0.05,
+    "AU15": 0.06393,
+    "AU7": 0.050995000000000006,
+    "EAR": 0.29667669999999996
+  },
+  "anchor_baseline": {
+    "AU4": 0.05,
+    "AU12": 0.05,
+    "AU15": 0.05,
+    "AU7": 0.05,
+    "EAR": 0.3
+  },
+  "emotion_bias": {
+    "frustrated": -0.01,
+    "stressed": -0.01,
+    "happy": -0.01,
+    "calm": 0.05,
+    "neutral": -0.01
+  },
+  "plasticity_index": 0.85,
+  "stability_index": 0.986
+}

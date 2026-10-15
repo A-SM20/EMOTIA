@@ -13,7 +13,14 @@ import {
 } from 'lucide-react';
 
 export const InsightsScreen = () => {
-  const { scenario } = useEmotion();
+  const { scenario, liveData, backendStatus } = useEmotion();
+
+  const isLive = backendStatus === 'connected' && liveData?.xai;
+  const factors = isLive ? liveData.xai.contributingFactors : scenario.contributingFactors;
+  const explanation = isLive ? liveData.xai.detailedExplanation : scenario.detailedExplanation;
+  const counterfactual = isLive ? liveData.xai.counterfactual : null;
+  const targetLabel = isLive && liveData.emotion ? liveData.emotion.charAt(0).toUpperCase() + liveData.emotion.slice(1) : scenario.label;
+  const targetConfidence = isLive && liveData.confidence ? Math.round(liveData.confidence * 100) : scenario.confidence;
 
   return (
     <div className="space-y-5 animate-fadeIn">
@@ -30,7 +37,7 @@ export const InsightsScreen = () => {
             </div>
             <div>
               <div className="text-[10px] font-mono uppercase tracking-wider text-zinc-500 font-medium">
-                Transparent Attribution (XAI)
+                Transparent Attribution (XAI) {isLive && '• LIVE TELEMETRY'}
               </div>
               <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
                 Why did the system predict this?
@@ -44,7 +51,7 @@ export const InsightsScreen = () => {
             <div>
               <div className="text-[10px] font-mono text-zinc-500 uppercase">Target Outcome</div>
               <div className="text-sm font-bold text-white">
-                {scenario.label} ({scenario.confidence}%)
+                {targetLabel} ({targetConfidence}%)
               </div>
             </div>
           </div>
@@ -59,11 +66,13 @@ export const InsightsScreen = () => {
                 Attribution Factor Weighting
               </h2>
             </div>
-            <span className="text-[10px] font-mono text-zinc-500">Sum = 100%</span>
+            <span className="text-[10px] font-mono text-zinc-500">
+              {isLive ? 'Real-Time Normalized Sum = 100%' : 'Sum = 100%'}
+            </span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {scenario.contributingFactors.map((factor, index) => {
+            {factors.map((factor, index) => {
               const icons = [Eye, Compass, Mic, History];
               const Icon = icons[index % icons.length];
 
@@ -85,7 +94,7 @@ export const InsightsScreen = () => {
                   <div className="h-1.5 w-full bg-zinc-950 rounded-full overflow-hidden border border-white/[0.04]">
                     <div
                       className="h-full bg-white rounded-full transition-all duration-500"
-                      style={{ width: `${factor.percentage * 2}%` }}
+                      style={{ width: `${Math.min(100, factor.percentage * 2)}%` }}
                     ></div>
                   </div>
 
@@ -97,13 +106,22 @@ export const InsightsScreen = () => {
         </div>
 
         {/* Natural Language AI Explanation Paragraph */}
-        <div className="p-4 rounded-lg bg-zinc-900/90 border border-white/[0.08] space-y-1.5">
-          <div className="text-zinc-400 font-medium text-xs font-mono">
-            Generated XAI Explanation
+        <div className="p-4 rounded-lg bg-zinc-900/90 border border-white/[0.08] space-y-2">
+          <div className="text-zinc-400 font-medium text-xs font-mono flex items-center justify-between">
+            <span>Generated XAI Explanation</span>
+            {isLive && <span className="text-emerald-400 text-[10px]">Active Reasoning Engine</span>}
           </div>
           <p className="text-xs sm:text-sm text-zinc-200 leading-relaxed font-sans">
-            "{scenario.detailedExplanation}"
+            "{explanation}"
           </p>
+
+          {counterfactual && (
+            <div className="pt-2 border-t border-white/[0.06] text-xs font-mono text-zinc-300 flex items-start space-x-1.5">
+              <span className="text-zinc-500 font-semibold">Counterfactual:</span>
+              <span>{counterfactual}</span>
+            </div>
+          )}
+
           <div className="text-[10px] font-mono text-zinc-500 pt-1 flex items-center justify-between">
             <span>Method: Integrated Gradients & Symbolic AU Mapping</span>
             <span className="text-zinc-300 font-medium">Trust Index: +34%</span>

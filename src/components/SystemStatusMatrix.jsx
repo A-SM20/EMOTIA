@@ -3,7 +3,8 @@ import { useEmotion } from '../context/EmotionContext';
 import { Activity } from 'lucide-react';
 
 export const SystemStatusMatrix = () => {
-  const { systemSubmodules, cameraActive, micActive } = useEmotion();
+  const { systemSubmodules, cameraActive, micActive, backendStatus, liveData } = useEmotion();
+  const isOnline = backendStatus === 'connected';
 
   return (
     <div className="bg-[#121215] rounded-xl border border-white/[0.08] p-4 shadow-sm">
@@ -14,8 +15,9 @@ export const SystemStatusMatrix = () => {
             Pipeline Subsystems
           </h3>
         </div>
-        <span className="text-[10px] font-mono text-zinc-400 bg-zinc-900 border border-white/[0.08] px-2 py-0.5 rounded-full">
-          9/9 Online
+        <span className="text-[10px] font-mono text-zinc-400 bg-zinc-900 border border-white/[0.08] px-2 py-0.5 rounded-full flex items-center space-x-1.5">
+          <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`}></span>
+          <span>{isOnline ? '9/9 Live Pipeline' : '9/9 Simulation'}</span>
         </span>
       </div>
 
@@ -23,8 +25,25 @@ export const SystemStatusMatrix = () => {
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
         {systemSubmodules.map((sub) => {
           let isRunning = true;
-          if (sub.id === 'camera' && !cameraActive) isRunning = false;
-          if (sub.id === 'microphone' && !micActive) isRunning = false;
+          let liveLatency = sub.latency;
+
+          if (sub.id === 'camera') {
+            isRunning = cameraActive;
+            if (isOnline && liveData?.stream) {
+              liveLatency = `${liveData.stream.fps || '30'} FPS`;
+            }
+          }
+          if (sub.id === 'microphone') {
+            isRunning = micActive;
+          }
+          if (sub.id === 'vision' && isOnline && liveData?.face?.latency_ms) {
+            liveLatency = `${liveData.face.latency_ms}ms`;
+          }
+          if (sub.id === 'actuator' || sub.id === 'actuators') {
+            if (isOnline && liveData?.hardware) {
+              liveLatency = `${liveData.hardware.servo?.angle || 90}°`;
+            }
+          }
 
           return (
             <div
@@ -48,7 +67,7 @@ export const SystemStatusMatrix = () => {
               <div className="flex items-center justify-between text-[10px] font-mono text-zinc-500">
                 <span>{sub.category}</span>
                 <span className={isRunning ? 'text-zinc-300 font-medium' : 'text-zinc-600'}>
-                  {isRunning ? sub.latency : 'OFF'}
+                  {isRunning ? liveLatency : 'OFF'}
                 </span>
               </div>
             </div>

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { SCENARIOS, INITIAL_CONVERSATIONS, SYSTEM_SUBMODULES } from '../data/mockScenarios';
 
+const BACKEND_BASE_URL = 'http://localhost:8000';
 const BACKEND_WS_URL = 'ws://localhost:8000/ws';
 const RECONNECT_DELAY_MS = 3000;
 
@@ -11,7 +12,7 @@ const SCENARIO_KEYS = ['frustrated', 'calm', 'happy', 'stressed', 'neutral'];
 export const EmotionProvider = ({ children }) => {
   const [activeScreen, setActiveScreen] = useState('dashboard');
   const [currentScenarioKey, setCurrentScenarioKey] = useState('frustrated');
-  const [isAutoCycle, setIsAutoCycle] = useState(true);
+  const [isAutoCycle, setIsAutoCycle] = useState(false); // Default to live sensing
   const [cycleSpeed, setCycleSpeed] = useState(8000); // 8s
   const [cameraActive, setCameraActive] = useState(true);
   const [micActive, setMicActive] = useState(true);
@@ -20,6 +21,7 @@ export const EmotionProvider = ({ children }) => {
   const [conversations, setConversations] = useState(INITIAL_CONVERSATIONS);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [ttsEnabled, setTtsEnabled] = useState(true);
+  const [useLiveVideo, setUseLiveVideo] = useState(true); // Toggle between live ESP32-CAM MJPEG and 3D mesh
 
   // ── Live Backend State ────────────────────────────────────────────────────
   const [backendStatus, setBackendStatus] = useState('offline'); // 'connected' | 'offline'
@@ -36,7 +38,7 @@ export const EmotionProvider = ({ children }) => {
 
       ws.onopen = () => {
         setBackendStatus('connected');
-        console.log('[EMOTIA] Backend connected ✓');
+        console.log('[EMOTIA] Live Backend Connected [OK]');
         if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
       };
 
@@ -76,7 +78,6 @@ export const EmotionProvider = ({ children }) => {
       ws.onclose = () => {
         setBackendStatus('offline');
         setLiveData(null);
-        // Auto-reconnect
         reconnectTimer.current = setTimeout(connectWS, RECONNECT_DELAY_MS);
       };
     } catch (e) {
@@ -93,6 +94,130 @@ export const EmotionProvider = ({ children }) => {
     };
   }, [connectWS]);
 
+  // ── Hardware & Backend REST Control API Dispatchers ───────────────────────
+  const updateStreamConfig = useCallback(async (sourceUrl) => {
+    try {
+      const res = await fetch(`${BACKEND_BASE_URL}/api/stream/config`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ source: sourceUrl })
+      });
+      return await res.json();
+    } catch (e) {
+      console.warn('[EMOTIA] Failed to update stream config:', e);
+      return null;
+    }
+  }, []);
+
+  const updateHardwareControl = useCallback(async (params) => {
+    try {
+      const res = await fetch(`${BACKEND_BASE_URL}/api/hardware/control`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(params)
+      });
+      return await res.json();
+    } catch (e) {
+      console.warn('[EMOTIA] Failed to send hardware control:', e);
+      return null;
+    }
+  }, []);
+
+  const updateEyeAnimation = useCallback(async (params) => {
+    try {
+      const res = await fetch(`${BACKEND_BASE_URL}/api/hardware/eyes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(params)
+      });
+      return await res.json();
+    } catch (e) {
+      console.warn('[EMOTIA] Failed to send eye animation:', e);
+      return null;
+    }
+  }, []);
+
+  const updateHardwareTransport = useCallback(async (transport, comPort = 'COM3', esp32Ip = '192.168.1.100') => {
+    try {
+      const res = await fetch(`${BACKEND_BASE_URL}/api/hardware/transport`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transport, com_port: comPort, esp32_ip: esp32Ip })
+      });
+      return await res.json();
+    } catch (e) {
+      console.warn('[EMOTIA] Failed to update hardware transport:', e);
+      return null;
+    }
+  }, []);
+
+  const submitUserFeedback = useCallback(async (correctedEmotion) => {
+    try {
+      const res = await fetch(`${BACKEND_BASE_URL}/api/cl/feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ corrected_emotion: correctedEmotion })
+      });
+      return await res.json();
+    } catch (e) {
+      console.warn('[EMOTIA] Failed to submit user feedback:', e);
+      return null;
+    }
+  }, []);
+
+  const setTaskContext = useCallback(async (task, app, details) => {
+    try {
+      const res = await fetch(`${BACKEND_BASE_URL}/api/context/set`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ task, app, details })
+      });
+      return await res.json();
+    } catch (e) {
+      console.warn('[EMOTIA] Failed to set task context:', e);
+      return null;
+    }
+  }, []);
+
+  // ── Long-Term Episodic Memory & Preference API ─────────────────────────────
+  const [memories, setMemories] = useState(null);
+
+  const fetchMemories = useCallback(async () => {
+    try {
+      const res = await fetch(`${BACKEND_BASE_URL}/api/memory/list`);
+      const data = await res.json();
+      if (data.status === 'ok') {
+        setMemories(data.memories);
+      }
+    } catch (e) {
+      console.warn('[EMOTIA] Failed to fetch memories:', e);
+    }
+  }, []);
+
+  const addMemoryNote = useCallback(async (note) => {
+    try {
+      const res = await fetch(`${BACKEND_BASE_URL}/api/memory/note`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(note)
+      });
+      const data = await res.json();
+      if (data.status === 'ok') {
+        fetchMemories();
+      }
+      return data;
+    } catch (e) {
+      console.warn('[EMOTIA] Failed to add memory note:', e);
+      return null;
+    }
+  }, [fetchMemories]);
+
+  useEffect(() => {
+    if (backendStatus === 'connected') {
+      fetchMemories();
+    }
+  }, [backendStatus, fetchMemories]);
+
   // User Profile state
   const [userProfile, setUserProfile] = useState({
     name: 'Dr. Alex Vance',
@@ -103,7 +228,7 @@ export const EmotionProvider = ({ children }) => {
     interests: ['Affective HRI', 'Multimodal Attention', 'Neuro-Symbolic XAI', 'PyTorch', 'Robotics UI'],
   });
 
-  // Generate initial historical emotion data for recharts
+  // Initial historical emotion data for recharts
   const [emotionHistory, setEmotionHistory] = useState(() => {
     const history = [];
     const now = Date.now();
@@ -130,6 +255,7 @@ export const EmotionProvider = ({ children }) => {
     return history;
   });
 
+  // Active scenario base object
   const scenario = SCENARIOS[currentScenarioKey] || SCENARIOS.frustrated;
 
   // Speech synthesis helper
@@ -146,7 +272,6 @@ export const EmotionProvider = ({ children }) => {
       utterance.rate = 1.05;
       utterance.pitch = 1.0;
       
-      // Try to find a pleasant English voice
       const voices = window.speechSynthesis.getVoices();
       const englishVoice = voices.find(v => v.lang.includes('en') && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Zira') || v.name.includes('Samantha')));
       if (englishVoice) {
@@ -178,7 +303,6 @@ export const EmotionProvider = ({ children }) => {
     setCurrentScenarioKey(scenarioKey);
     const targetScenario = SCENARIOS[scenarioKey];
 
-    // Push new point into emotion history
     const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     setEmotionHistory(prev => {
       const updated = [...prev, {
@@ -189,7 +313,6 @@ export const EmotionProvider = ({ children }) => {
         arousal: targetScenario.arousal,
         emotion: targetScenario.label,
       }];
-      // Keep last 15 points
       return updated.slice(-15);
     });
 
@@ -198,7 +321,7 @@ export const EmotionProvider = ({ children }) => {
     }
   }, [speakAssistantMessage, ttsEnabled]);
 
-  // Auto-cycle loop
+  // Auto-cycle loop (only runs if user turns it on)
   const cycleIndexRef = useRef(0);
   useEffect(() => {
     if (!isAutoCycle) return;
@@ -212,8 +335,8 @@ export const EmotionProvider = ({ children }) => {
     return () => clearInterval(interval);
   }, [isAutoCycle, cycleSpeed, triggerScenario]);
 
-  // Send a custom message from user
-  const sendMessage = useCallback((userText) => {
+  // Send a custom message from user (Live AI Conversational Reasoning or Scenario Fallback)
+  const sendMessage = useCallback(async (userText) => {
     if (!userText.trim()) return;
 
     const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -230,7 +353,38 @@ export const EmotionProvider = ({ children }) => {
 
     setConversations(prev => [...prev, newUserMsg]);
 
-    // Simulated contextual Assistant response
+    // 1. Try real-time affective backend reasoning
+    if (backendStatus === 'connected') {
+      try {
+        const res = await fetch(`${BACKEND_BASE_URL}/api/chat/message`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: userText, user_profile: userProfile })
+        });
+        const data = await res.json();
+        if (data.status === 'ok' && data.response?.reply) {
+          const resp = data.response;
+          const newAssistantMsg = {
+            id: Date.now() + 1,
+            sender: 'assistant',
+            text: resp.reply,
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+            contextTag: resp.context_tag || { task: currentScen.taskContext, emotionState: currentScen.label, proactive: true },
+            recommendation: resp.recommendation || currentScen.proactiveAction,
+          };
+          setConversations(prev => [...prev, newAssistantMsg]);
+          if (ttsEnabled) {
+            speakAssistantMessage(resp.reply);
+          }
+          fetchMemories();
+          return;
+        }
+      } catch (e) {
+        console.warn('[EMOTIA] Chat API error, falling back:', e);
+      }
+    }
+
+    // 2. Client-side fallback if backend is offline or slow
     setTimeout(() => {
       let replyText = `I understand. Based on your current ${currentScen.label.toLowerCase()} state (${currentScen.confidence}% confidence), I'm actively optimizing your workstation context and analyzing potential bottlenecks in ${currentScen.taskContext}.`;
       
@@ -257,8 +411,8 @@ export const EmotionProvider = ({ children }) => {
       if (ttsEnabled) {
         speakAssistantMessage(replyText);
       }
-    }, 900);
-  }, [currentScenarioKey, micActive, speakAssistantMessage, ttsEnabled]);
+    }, 600);
+  }, [currentScenarioKey, micActive, backendStatus, userProfile, ttsEnabled, speakAssistantMessage, fetchMemories]);
 
   const value = {
     activeScreen,
@@ -291,10 +445,26 @@ export const EmotionProvider = ({ children }) => {
     setSettingsOpen,
     scenarioKeys: SCENARIO_KEYS,
     allScenarios: SCENARIOS,
-    // Live backend
+    // Live Backend & Hardware State
     backendStatus,
     liveData,
     connectWS,
+    useLiveVideo,
+    setUseLiveVideo,
+    updateStreamConfig,
+    updateHardwareControl,
+    updateHardwareTransport,
+    updateEyeAnimation,
+    submitUserFeedback,
+    setTaskContext,
+    memories,
+    fetchMemories,
+    addMemoryNote,
+    hardwareState: liveData?.hardware || null,
+    clTelemetry: liveData?.continual_learning || null,
+    contextTelemetry: liveData?.context || null,
+    xaiTelemetry: liveData?.xai || null,
+    backendBaseUrl: BACKEND_BASE_URL,
   };
 
   return (

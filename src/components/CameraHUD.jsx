@@ -3,7 +3,16 @@ import { useEmotion } from '../context/EmotionContext';
 import { Camera, CameraOff, Eye, EyeOff, ScanFace } from 'lucide-react';
 
 export const CameraHUD = () => {
-  const { scenario, cameraActive, setCameraActive } = useEmotion();
+  const {
+    scenario,
+    cameraActive,
+    setCameraActive,
+    backendStatus,
+    liveData,
+    useLiveVideo,
+    setUseLiveVideo,
+    backendBaseUrl,
+  } = useEmotion();
   const [showMesh, setShowMesh] = useState(true);
   const [recSeconds, setRecSeconds] = useState(1124);
 
@@ -278,151 +287,191 @@ export const CameraHUD = () => {
       {/* Main Video Viewport */}
       <div className="relative aspect-[16/10] w-full bg-[#0c0c0e] overflow-hidden flex items-center justify-center">
         {cameraActive ? (
-          <div className="relative w-full h-full flex items-center justify-center p-4">
-            {/* Minimalist Focal Frame */}
-            <div
-              className="relative w-44 h-52 sm:w-52 sm:h-60 flex items-center justify-center transition-transform duration-100 ease-out"
-              style={{
-                transform: `translate(${headOffsetX * 0.4}px, ${headOffsetY * 0.4}px)`,
-              }}
-            >
-              <div className="absolute inset-0 border border-white/20 rounded-xl bg-zinc-900/20 backdrop-blur-[1px]">
-                {/* Minimalist Corner Markers */}
-                <div className="absolute -top-1 -left-1 w-2.5 h-2.5 border-t border-l border-white"></div>
-                <div className="absolute -top-1 -right-1 w-2.5 h-2.5 border-t border-r border-white"></div>
-                <div className="absolute -bottom-1 -left-1 w-2.5 h-2.5 border-b border-l border-white"></div>
-                <div className="absolute -bottom-1 -right-1 w-2.5 h-2.5 border-b border-r border-white"></div>
+          useLiveVideo && backendStatus === 'connected' ? (
+            /* Live ESP32-CAM / Video Feed Stream from FastAPI */
+            <div className="relative w-full h-full flex items-center justify-center bg-black overflow-hidden group">
+              <img
+                src={`${backendBaseUrl}/video_feed`}
+                alt="EMOTIA Live Stream Feed"
+                className="w-full h-full object-contain"
+                onError={() => setUseLiveVideo(false)}
+              />
 
-                {/* Top Label Tag */}
-                <div className="absolute -top-2.5 left-2.5 bg-zinc-900 px-2 py-0.2 rounded text-[10px] font-mono border border-white/[0.08] text-zinc-200 flex items-center space-x-1">
-                  <span>Tracked:</span>
-                  <span className="text-white font-medium">{scenario.label} ({scenario.confidence}%)</span>
-                </div>
+              {/* Top Source Badge */}
+              <div className="absolute top-3 left-3 bg-zinc-900/90 backdrop-blur-md px-2.5 py-1 rounded-md border border-white/[0.08] text-[10px] font-mono text-zinc-300 flex items-center space-x-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span className="uppercase font-semibold">FEED: {liveData?.stream?.source_type || 'LIVE'}</span>
+                <span className="text-zinc-600">|</span>
+                <span className="text-zinc-400">{liveData?.stream?.fps || '30.0'} FPS</span>
               </div>
 
-              {/* Dynamic SVG Animated Facial Mesh */}
-              <svg
-                viewBox="0 0 200 240"
-                className="w-full h-full overflow-visible"
+              {/* Top-Right Tracking Badge */}
+              <div className="absolute top-3 right-3 bg-zinc-900/90 backdrop-blur-md px-2.5 py-1 rounded-md border border-white/[0.08] text-[10px] font-mono text-zinc-300 flex items-center space-x-1.5">
+                <span className="text-zinc-400">Target:</span>
+                <span className="text-white font-bold uppercase">{liveData?.emotion || scenario.label} ({Math.round((liveData?.confidence || 0.85) * 100)}%)</span>
+              </div>
+
+              {/* Bottom HUD: Real-time Action Units */}
+              <div className="absolute bottom-3 left-3 bg-zinc-900/90 backdrop-blur-md px-2.5 py-1 rounded-md border border-white/[0.08] text-[10px] font-mono text-zinc-400 flex items-center space-x-3">
+                <span className="text-zinc-300 font-medium">AU4: <strong className="text-white font-mono">{liveData?.face?.action_units?.AU4 ?? '0.00'}</strong></span>
+                <span className="text-zinc-300 font-medium">AU12: <strong className="text-white font-mono">{liveData?.face?.action_units?.AU12 ?? '0.00'}</strong></span>
+                <span className="text-zinc-300 font-medium">AU15: <strong className="text-white font-mono">{liveData?.face?.action_units?.AU15 ?? '0.00'}</strong></span>
+              </div>
+
+              {/* Bottom-Right: Servo Actuator Angle */}
+              <div className="absolute bottom-3 right-3 bg-zinc-900/90 backdrop-blur-md px-2.5 py-1 rounded-md border border-white/[0.08] text-[10px] font-mono text-zinc-400 flex items-center space-x-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                <span>SERVO: {liveData?.hardware?.servo?.angle ?? 90}°</span>
+              </div>
+            </div>
+          ) : (
+            /* Synthetic / 3D Vector Landmark Simulation */
+            <div className="relative w-full h-full flex items-center justify-center p-4">
+              {/* Minimalist Focal Frame */}
+              <div
+                className="relative w-44 h-52 sm:w-52 sm:h-60 flex items-center justify-center transition-transform duration-100 ease-out"
+                style={{
+                  transform: `translate(${headOffsetX * 0.4}px, ${headOffsetY * 0.4}px)`,
+                }}
               >
-                {/* Smooth Animated Head Contour */}
-                <path
-                  d={`M${100 + headOffsetX},${25 + headOffsetY} C${140 + headOffsetX * 0.8},${25 + headOffsetY} ${165 + headOffsetX * 0.8},${55 + headOffsetY} ${165 + headOffsetX * 0.8},${110 + headOffsetY} C${165 + headOffsetX * 0.8},${165 + headOffsetY} ${135 + headOffsetX * 0.9},${205 + headOffsetY} ${100 + headOffsetX},${215 + headOffsetY} C${65 + headOffsetX * 0.9},${205 + headOffsetY} ${35 + headOffsetX * 0.8},${165 + headOffsetY} ${35 + headOffsetX * 0.8},${110 + headOffsetY} C${35 + headOffsetX * 0.8},${55 + headOffsetY} ${60 + headOffsetX * 0.8},${25 + headOffsetY} ${100 + headOffsetX},${25 + headOffsetY} Z`}
-                  fill="none"
-                  stroke="rgba(255, 255, 255, 0.22)"
-                  strokeWidth="1.2"
-                />
+                <div className="absolute inset-0 border border-white/20 rounded-xl bg-zinc-900/20 backdrop-blur-[1px]">
+                  {/* Minimalist Corner Markers */}
+                  <div className="absolute -top-1 -left-1 w-2.5 h-2.5 border-t border-l border-white"></div>
+                  <div className="absolute -top-1 -right-1 w-2.5 h-2.5 border-t border-r border-white"></div>
+                  <div className="absolute -bottom-1 -left-1 w-2.5 h-2.5 border-b border-l border-white"></div>
+                  <div className="absolute -bottom-1 -right-1 w-2.5 h-2.5 border-b border-r border-white"></div>
 
-                {showMesh && (
-                  <>
-                    {/* Triangulation Wireframe Lines */}
-                    {meshConnections.map(([i, j], idx) => {
-                      const p1 = landmarks[i];
-                      const p2 = landmarks[j];
-                      if (!p1 || !p2) return null;
-                      return (
-                        <line
-                          key={idx}
-                          x1={p1[0]}
-                          y1={p1[1]}
-                          x2={p2[0]}
-                          y2={p2[1]}
-                          stroke="rgba(255, 255, 255, 0.12)"
-                          strokeWidth="0.8"
+                  {/* Top Label Tag */}
+                  <div className="absolute -top-2.5 left-2.5 bg-zinc-900 px-2 py-0.2 rounded text-[10px] font-mono border border-white/[0.08] text-zinc-200 flex items-center space-x-1">
+                    <span>Tracked:</span>
+                    <span className="text-white font-medium">{scenario.label} ({scenario.confidence}%)</span>
+                  </div>
+                </div>
+
+                {/* Dynamic SVG Animated Facial Mesh */}
+                <svg
+                  viewBox="0 0 200 240"
+                  className="w-full h-full overflow-visible"
+                >
+                  {/* Smooth Animated Head Contour */}
+                  <path
+                    d={`M${100 + headOffsetX},${25 + headOffsetY} C${140 + headOffsetX * 0.8},${25 + headOffsetY} ${165 + headOffsetX * 0.8},${55 + headOffsetY} ${165 + headOffsetX * 0.8},${110 + headOffsetY} C${165 + headOffsetX * 0.8},${165 + headOffsetY} ${135 + headOffsetX * 0.9},${205 + headOffsetY} ${100 + headOffsetX},${215 + headOffsetY} C${65 + headOffsetX * 0.9},${205 + headOffsetY} ${35 + headOffsetX * 0.8},${165 + headOffsetY} ${35 + headOffsetX * 0.8},${110 + headOffsetY} C${35 + headOffsetX * 0.8},${55 + headOffsetY} ${60 + headOffsetX * 0.8},${25 + headOffsetY} ${100 + headOffsetX},${25 + headOffsetY} Z`}
+                    fill="none"
+                    stroke="rgba(255, 255, 255, 0.22)"
+                    strokeWidth="1.2"
+                  />
+
+                  {showMesh && (
+                    <>
+                      {/* Triangulation Wireframe Lines */}
+                      {meshConnections.map(([i, j], idx) => {
+                        const p1 = landmarks[i];
+                        const p2 = landmarks[j];
+                        if (!p1 || !p2) return null;
+                        return (
+                          <line
+                            key={idx}
+                            x1={p1[0]}
+                            y1={p1[1]}
+                            x2={p2[0]}
+                            y2={p2[1]}
+                            stroke="rgba(255, 255, 255, 0.12)"
+                            strokeWidth="0.8"
+                          />
+                        );
+                      })}
+
+                      {/* Animated Eyebrows (AU4 / AU1 dynamic curves) */}
+                      <path
+                        d={`M${60 + headOffsetX},${leftBrowY1 + headOffsetY} Q${75 + headOffsetX},${leftBrowYMid + headOffsetY} ${90 + headOffsetX},${leftBrowY2 + headOffsetY}`}
+                        fill="none"
+                        stroke="rgba(255, 255, 255, 0.85)"
+                        strokeWidth="1.8"
+                      />
+                      <path
+                        d={`M${110 + headOffsetX},${rightBrowY1 + headOffsetY} Q${125 + headOffsetX},${rightBrowYMid + headOffsetY} ${140 + headOffsetX},${rightBrowY2 + headOffsetY}`}
+                        fill="none"
+                        stroke="rgba(255, 255, 255, 0.85)"
+                        strokeWidth="1.8"
+                      />
+
+                      {/* Left Eye & Gaze Pupil */}
+                      <ellipse
+                        cx={75 + headOffsetX}
+                        cy={98 + headOffsetY}
+                        rx={6}
+                        ry={eyeRadiusY}
+                        fill="none"
+                        stroke="rgba(255, 255, 255, 0.7)"
+                        strokeWidth="1.2"
+                      />
+                      {!isBlinking && (
+                        <circle
+                          cx={75 + headOffsetX + gazeX}
+                          cy={98 + headOffsetY + gazeY}
+                          r={2.2}
+                          fill="#ffffff"
                         />
-                      );
-                    })}
+                      )}
 
-                    {/* Animated Eyebrows (AU4 / AU1 dynamic curves) */}
-                    <path
-                      d={`M${60 + headOffsetX},${leftBrowY1 + headOffsetY} Q${75 + headOffsetX},${leftBrowYMid + headOffsetY} ${90 + headOffsetX},${leftBrowY2 + headOffsetY}`}
-                      fill="none"
-                      stroke="rgba(255, 255, 255, 0.85)"
-                      strokeWidth="1.8"
-                    />
-                    <path
-                      d={`M${110 + headOffsetX},${rightBrowY1 + headOffsetY} Q${125 + headOffsetX},${rightBrowYMid + headOffsetY} ${140 + headOffsetX},${rightBrowY2 + headOffsetY}`}
-                      fill="none"
-                      stroke="rgba(255, 255, 255, 0.85)"
-                      strokeWidth="1.8"
-                    />
-
-                    {/* Left Eye & Gaze Pupil */}
-                    <ellipse
-                      cx={75 + headOffsetX}
-                      cy={98 + headOffsetY}
-                      rx={6}
-                      ry={eyeRadiusY}
-                      fill="none"
-                      stroke="rgba(255, 255, 255, 0.7)"
-                      strokeWidth="1.2"
-                    />
-                    {!isBlinking && (
-                      <circle
-                        cx={75 + headOffsetX + gazeX}
-                        cy={98 + headOffsetY + gazeY}
-                        r={2.2}
-                        fill="#ffffff"
+                      {/* Right Eye & Gaze Pupil */}
+                      <ellipse
+                        cx={125 + headOffsetX}
+                        cy={98 + headOffsetY}
+                        rx={6}
+                        ry={eyeRadiusY}
+                        fill="none"
+                        stroke="rgba(255, 255, 255, 0.7)"
+                        strokeWidth="1.2"
                       />
-                    )}
+                      {!isBlinking && (
+                        <circle
+                          cx={125 + headOffsetX + gazeX}
+                          cy={98 + headOffsetY + gazeY}
+                          r={2.2}
+                          fill="#ffffff"
+                        />
+                      )}
 
-                    {/* Right Eye & Gaze Pupil */}
-                    <ellipse
-                      cx={125 + headOffsetX}
-                      cy={98 + headOffsetY}
-                      rx={6}
-                      ry={eyeRadiusY}
-                      fill="none"
-                      stroke="rgba(255, 255, 255, 0.7)"
-                      strokeWidth="1.2"
-                    />
-                    {!isBlinking && (
-                      <circle
-                        cx={125 + headOffsetX + gazeX}
-                        cy={98 + headOffsetY + gazeY}
-                        r={2.2}
-                        fill="#ffffff"
+                      {/* Nose Bridge */}
+                      <path
+                        d={`M${100 + headOffsetX},${92 + headOffsetY} L${100 + headOffsetX},${135 + headOffsetY} L${93 + headOffsetX},${140 + headOffsetY} L${107 + headOffsetX},${140 + headOffsetY}`}
+                        fill="none"
+                        stroke="rgba(255, 255, 255, 0.4)"
+                        strokeWidth="1.2"
                       />
-                    )}
 
-                    {/* Nose Bridge */}
-                    <path
-                      d={`M${100 + headOffsetX},${92 + headOffsetY} L${100 + headOffsetX},${135 + headOffsetY} L${93 + headOffsetX},${140 + headOffsetY} L${107 + headOffsetX},${140 + headOffsetY}`}
-                      fill="none"
-                      stroke="rgba(255, 255, 255, 0.4)"
-                      strokeWidth="1.2"
-                    />
-
-                    {/* Animated Mouth (AU12 / AU15 dynamic curve) */}
-                    <path
-                      d={mouthPath}
-                      transform={`translate(${headOffsetX}, ${headOffsetY})`}
-                      fill="none"
-                      stroke="rgba(255, 255, 255, 0.85)"
-                      strokeWidth="1.6"
-                    />
-
-                    {/* Dynamic Landmark Points */}
-                    {landmarks.map(([cx, cy], i) => (
-                      <circle
-                        key={i}
-                        cx={cx}
-                        cy={cy}
-                        r={1.3}
-                        fill="#ffffff"
-                        opacity={0.8}
+                      {/* Animated Mouth (AU12 / AU15 dynamic curve) */}
+                      <path
+                        d={mouthPath}
+                        transform={`translate(${headOffsetX}, ${headOffsetY})`}
+                        fill="none"
+                        stroke="rgba(255, 255, 255, 0.85)"
+                        strokeWidth="1.6"
                       />
-                    ))}
-                  </>
-                )}
-              </svg>
+
+                      {/* Dynamic Landmark Points */}
+                      {landmarks.map(([cx, cy], i) => (
+                        <circle
+                          key={i}
+                          cx={cx}
+                          cy={cy}
+                          r={1.3}
+                          fill="#ffffff"
+                          opacity={0.8}
+                        />
+                      ))}
+                    </>
+                  )}
+                </svg>
+              </div>
+
+              {/* Bottom HUD info overlay: Gaze tracking */}
+              <div className="absolute bottom-3 left-3 bg-zinc-900/90 backdrop-blur-md px-2.5 py-1 rounded-md border border-white/[0.08] text-[10px] font-mono text-zinc-400">
+                <span>Gaze: {scenario.modalities.facial.metric}</span>
+              </div>
             </div>
-
-            {/* Bottom HUD info overlay: Gaze tracking */}
-            <div className="absolute bottom-3 left-3 bg-zinc-900/90 backdrop-blur-md px-2.5 py-1 rounded-md border border-white/[0.08] text-[10px] font-mono text-zinc-400">
-              <span>Gaze: {scenario.modalities.facial.metric}</span>
-            </div>
-          </div>
+          )
         ) : (
           <div className="text-center p-6 space-y-2">
             <div className="w-10 h-10 rounded-xl bg-zinc-900 border border-white/[0.08] mx-auto flex items-center justify-center text-zinc-500">
@@ -434,7 +483,7 @@ export const CameraHUD = () => {
       </div>
 
       {/* Bottom Controls */}
-      <div className="bg-[#151518] border-t border-white/[0.08] px-3 py-2 flex items-center justify-between">
+      <div className="bg-[#151518] border-t border-white/[0.08] px-3 py-2 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center space-x-2">
           <button
             onClick={() => setCameraActive(!cameraActive)}
@@ -448,20 +497,45 @@ export const CameraHUD = () => {
             <span>{cameraActive ? 'Camera ON' : 'Camera OFF'}</span>
           </button>
 
-          <button
-            onClick={() => setShowMesh(!showMesh)}
-            disabled={!cameraActive}
-            className={`px-2.5 py-1 rounded-md text-xs font-mono flex items-center space-x-1.5 border transition-all ${
-              !cameraActive ? 'opacity-40 cursor-not-allowed' : ''
-            } ${
-              showMesh
-                ? 'bg-zinc-800 text-white border-white/20'
-                : 'bg-zinc-900 text-zinc-400 border-white/[0.08] hover:text-white'
-            }`}
-          >
-            {showMesh ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-            <span>{showMesh ? '3D Mesh ON' : '3D Mesh OFF'}</span>
-          </button>
+          {backendStatus === 'connected' && (
+            <button
+              onClick={() => setUseLiveVideo(!useLiveVideo)}
+              disabled={!cameraActive}
+              className={`px-2.5 py-1 rounded-md text-xs font-mono flex items-center space-x-1.5 border transition-all ${
+                useLiveVideo
+                  ? 'bg-emerald-950/80 text-emerald-300 border-emerald-500/40'
+                  : 'bg-zinc-900 text-zinc-400 border-white/[0.08] hover:text-white'
+              }`}
+            >
+              <ScanFace className="w-3.5 h-3.5" />
+              <span>{useLiveVideo ? 'Live Camera Feed' : '3D Wireframe'}</span>
+            </button>
+          )}
+
+          {!useLiveVideo && (
+            <button
+              onClick={() => setShowMesh(!showMesh)}
+              disabled={!cameraActive}
+              className={`px-2.5 py-1 rounded-md text-xs font-mono flex items-center space-x-1.5 border transition-all ${
+                !cameraActive ? 'opacity-40 cursor-not-allowed' : ''
+              } ${
+                showMesh
+                  ? 'bg-zinc-800 text-white border-white/20'
+                  : 'bg-zinc-900 text-zinc-400 border-white/[0.08] hover:text-white'
+              }`}
+            >
+              {showMesh ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+              <span>{showMesh ? 'Mesh ON' : 'Mesh OFF'}</span>
+            </button>
+          )}
+        </div>
+
+        {/* Right Status Indicator */}
+        <div className="flex items-center space-x-2 text-[10px] font-mono text-zinc-400">
+          <span className="flex items-center space-x-1">
+            <span className={`w-1.5 h-1.5 rounded-full ${backendStatus === 'connected' ? 'bg-emerald-400' : 'bg-zinc-600'}`}></span>
+            <span>{backendStatus === 'connected' ? 'Hardware Hub Online' : 'Simulation Mode'}</span>
+          </span>
         </div>
       </div>
     </div>
