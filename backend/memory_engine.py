@@ -183,8 +183,8 @@ class MemoryEngine:
                     min_dist = dist
                     best_match = pid
 
-        # Biometric similarity threshold
-        if best_match and min_dist < 0.20:
+        # Biometric similarity threshold (normalized Euclidean distance)
+        if best_match and min_dist < 0.28:
             person = persons[best_match]
             person["last_seen"] = now_str
             # Exponential moving average to calibrate face signature over time
@@ -192,16 +192,6 @@ class MemoryEngine:
             data["active_person_id"] = best_match
             self.save_data(data)
             return {**person, "match_confidence": round(max(0.65, 1.0 - min_dist), 2), "is_new": False}
-
-        # Otherwise, match primary user or register new person
-        primary_id = "user_1"
-        if primary_id in persons:
-            person = persons[primary_id]
-            person["last_seen"] = now_str
-            person["face_signature"] = [round(0.90 * s + 0.10 * v, 4) for s, v in zip(person["face_signature"], vector)]
-            data["active_person_id"] = primary_id
-            self.save_data(data)
-            return {**person, "match_confidence": 0.88, "is_new": False}
 
         # Register new person
         new_id = f"user_{len(persons) + 1}"

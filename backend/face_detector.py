@@ -90,6 +90,16 @@ class FaceDetector:
         Returns: (result_dict, annotated_frame_bgr)
         """
         t_start = time.time()
+        if frame_bgr is None or getattr(frame_bgr, 'size', 0) == 0 or len(getattr(frame_bgr, 'shape', [])) < 2 or frame_bgr.shape[0] == 0 or frame_bgr.shape[1] == 0:
+            with self._lock:
+                self._latest_result["detected"] = False
+                self._latest_result["landmarks_count"] = 0
+                self._latest_result["face_bbox"] = None
+                self._latest_result["face_center_norm"] = [0.0, 0.0]
+                self._latest_result["latency_ms"] = 0.0
+                safe_frame = frame_bgr if (frame_bgr is not None and getattr(frame_bgr, 'size', 0) > 0) else np.zeros((480, 640, 3), dtype=np.uint8)
+                return self._latest_result.copy(), safe_frame
+
         h, w = frame_bgr.shape[:2]
         gray = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2GRAY)
         annotated = frame_bgr.copy() if draw_overlay else frame_bgr

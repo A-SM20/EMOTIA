@@ -1,9 +1,9 @@
 {
-  "user_id": "ID_ALEX_01",
-  "timestamp": 1792124431.8800406,
-  "calibration_samples": 0,
+  "user_id": "ID_TEST_AUDIT",
+  "timestamp": 1792136835.9130938,
+  "calibration_samples": 30,
   "baseline_means": {
-    "AU4": 0.05,
+    "AU4": 0.11361693314369567,
     "AU12": 0.05,
     "AU15": 0.05,
     "AU7": 0.05,
@@ -24,5 +24,5 @@
     "neutral": -0.01
   },
   "plasticity_index": 0.85,
-  "stability_index": 0.94
+  "stability_index": 0.975
 }

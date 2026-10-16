@@ -68,12 +68,17 @@ def fuse(face_result: dict, speech_result: dict, fatigue_result: dict) -> dict:
 
     # Pick dominant emotion
     best_emotion = max(scores, key=lambda e: scores[e])
-    total = sum(scores.values()) or 1.0
-    confidence = round(scores[best_emotion] / total, 3)
 
-    # Ensure minimum confidence floor when face is detected
-    if face_result.get("detected") and confidence < 0.55:
-        confidence = 0.55
+    # Evidence-weighted confidence calculation across active modalities
+    active_weights = (W_FACE if face_result.get("detected") else 0.0) + \
+                     (W_SPEECH if speech_result.get("active") else 0.0) + \
+                     (W_FATIGUE if fatigue_score > 0.3 else 0.0)
+
+    if active_weights > 0:
+        raw_evidence = scores[best_emotion] / active_weights
+        confidence = round(max(0.15, min(0.99, raw_evidence)), 3)
+    else:
+        confidence = 0.50
 
     va = _emotion_vec(best_emotion)
 
