@@ -168,6 +168,8 @@ class FaceDetector:
         else:
             au12 = 0.05
 
+        smile_detected = (au12 > 0.30)
+
         # AU45 (Blink): eyes closed if face is large but 0 eyes detected
         au45 = 1.0 if (len(eyes) == 0 and fw > 100) else 0.0
 
