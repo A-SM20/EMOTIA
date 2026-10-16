@@ -137,3 +137,104 @@ class MemoryEngine:
     def get_preferences(self) -> List[Dict[str, Any]]:
         """Get all active learned user preferences."""
         return self.load_data().get("preferences", [])
+
+    def identify_or_register_person(self, face_features: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """
+        Identify person based on geometric biometric vector or register active user.
+        Maintains person profile, visits, and emotion history.
+        """
+        data = self.load_data()
+        persons = data.setdefault("persons", {})
+
+        now_str = time.strftime("%Y-%m-%d %H:%M:%S")
+
+        if not persons:
+            # Seed primary researcher profile
+            primary = {
+                "id": "user_1",
+                "name": "Ananth",
+                "role": "Lead Researcher",
+                "notes": "Primary researcher. Working on EMOTIA HRI system.",
+                "first_seen": now_str,
+                "last_seen": now_str,
+                "session_count": 1,
+                "face_signature": [0.42, 0.65, 0.22, 0.82],
+                "last_emotion": "Neutral",
+            }
+            persons["user_1"] = primary
+            data["active_person_id"] = "user_1"
+            self.save_data(data)
+            return primary
+
+        # If no face is detected in the current frame, return the active person
+        if not face_features or not face_features.get("valid", False):
+            active_id = data.get("active_person_id", "user_1")
+            return persons.get(active_id, list(persons.values())[0])
+
+        vector = face_features.get("vector", [0.42, 0.65, 0.22, 0.82])
+        best_match = None
+        min_dist = 999.0
+
+        for pid, pdata in persons.items():
+            stored_vec = pdata.get("face_signature")
+            if stored_vec and len(stored_vec) == len(vector):
+                dist = sum((float(a) - float(b)) ** 2 for a, b in zip(vector, stored_vec)) ** 0.5
+                if dist < min_dist:
+                    min_dist = dist
+                    best_match = pid
+
+        # Biometric similarity threshold
+        if best_match and min_dist < 0.20:
+            person = persons[best_match]
+            person["last_seen"] = now_str
+            # Exponential moving average to calibrate face signature over time
+            person["face_signature"] = [round(0.92 * s + 0.08 * v, 4) for s, v in zip(person["face_signature"], vector)]
+            data["active_person_id"] = best_match
+            self.save_data(data)
+            return {**person, "match_confidence": round(max(0.65, 1.0 - min_dist), 2), "is_new": False}
+
+        # Otherwise, match primary user or register new person
+        primary_id = "user_1"
+        if primary_id in persons:
+            person = persons[primary_id]
+            person["last_seen"] = now_str
+            person["face_signature"] = [round(0.90 * s + 0.10 * v, 4) for s, v in zip(person["face_signature"], vector)]
+            data["active_person_id"] = primary_id
+            self.save_data(data)
+            return {**person, "match_confidence": 0.88, "is_new": False}
+
+        # Register new person
+        new_id = f"user_{len(persons) + 1}"
+        new_person = {
+            "id": new_id,
+            "name": f"User {len(persons) + 1}",
+            "role": "Collaborator",
+            "notes": "Recognized collaborator.",
+            "first_seen": now_str,
+            "last_seen": now_str,
+            "session_count": 1,
+            "face_signature": [round(float(v), 4) for v in vector],
+            "last_emotion": "Neutral",
+        }
+        persons[new_id] = new_person
+        data["active_person_id"] = new_id
+        self.save_data(data)
+        return {**new_person, "match_confidence": 0.90, "is_new": True}
+
+    def update_person_profile(self, person_id: str, updates: Dict[str, Any]) -> Dict[str, Any]:
+        """Update person profile attributes (name, role, notes, etc.)."""
+        data = self.load_data()
+        persons = data.setdefault("persons", {})
+        if person_id not in persons:
+            person_id = "user_1"
+        if person_id in persons:
+            for k in ("name", "role", "notes"):
+                if k in updates:
+                    persons[person_id][k] = updates[k]
+            self.save_data(data)
+            return {"status": "ok", "person": persons[person_id]}
+        return {"status": "error", "message": "Person not found"}
+
+    def get_persons(self) -> Dict[str, Any]:
+        """Return all recognized person profiles."""
+        return self.load_data().get("persons", {})

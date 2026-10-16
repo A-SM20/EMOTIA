@@ -25,9 +25,24 @@ export const DashboardScreen = () => {
     setIsListening,
     sendMessage,
     setActiveScreen,
+    backendStatus,
+    liveData,
   } = useEmotion();
 
   const [inputPrompt, setInputPrompt] = useState('');
+
+  const isLive = backendStatus === 'connected' && !!liveData;
+  const activeEmotion = isLive && liveData.emotion ? (liveData.emotion.charAt(0).toUpperCase() + liveData.emotion.slice(1)) : scenario.label;
+  const activeConfidence = isLive && liveData.confidence != null ? Math.round(liveData.confidence * 100) : scenario.confidence;
+  const activeValence = isLive && liveData.valence != null ? Number(liveData.valence).toFixed(2) : scenario.valence;
+  const activeArousal = isLive && liveData.arousal != null ? Number(liveData.arousal).toFixed(2) : scenario.arousal;
+  const activeAssistantMsg = (isLive && liveData.assistant_message)
+    ? liveData.assistant_message
+    : (isLive && liveData?.context?.assistantSpeech)
+      ? liveData.context.assistantSpeech
+      : scenario.assistantMessage;
+  const activePersonName = liveData?.person?.name || 'Ananth';
+  const activePersonRole = liveData?.person?.role || 'Lead Researcher';
 
   const handleSend = (e) => {
     e.preventDefault();
@@ -61,8 +76,13 @@ export const DashboardScreen = () => {
                   style={{ backgroundColor: scenario.dotColor }}
                 ></span>
                 <span className="text-xs font-semibold uppercase tracking-wider text-zinc-400 font-mono">
-                  Current Affect State
+                  Current Affect State {isLive && '• LIVE'}
                 </span>
+                {isLive && (
+                  <span className="ml-1 px-2 py-0.5 rounded-full bg-zinc-800 text-[10px] font-mono text-emerald-400 border border-emerald-500/30">
+                    👤 {activePersonName}
+                  </span>
+                )}
               </div>
 
               <button
@@ -82,14 +102,14 @@ export const DashboardScreen = () => {
               <div className="space-y-1">
                 <div className="flex items-center space-x-2">
                   <h2 className="text-2xl font-bold tracking-tight text-white">
-                    {scenario.label}
+                    {activeEmotion}
                   </h2>
                   <span className="text-xs font-mono font-medium px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-300 border border-white/[0.08]">
-                    {scenario.confidence}%
+                    {activeConfidence}%
                   </span>
                 </div>
                 <p className="text-xs text-zinc-400">
-                  Multimodal cross-attention confirmed
+                  {isLive ? 'Live Swin-FER & Wav2Vec2 multimodal inference' : 'Multimodal cross-attention confirmed'}
                 </p>
               </div>
             </div>
@@ -98,12 +118,12 @@ export const DashboardScreen = () => {
             <div className="space-y-1.5 mb-4">
               <div className="flex items-center justify-between text-xs font-mono">
                 <span className="text-zinc-400">Model Confidence</span>
-                <span className="font-semibold text-white">{scenario.confidence}%</span>
+                <span className="font-semibold text-white">{activeConfidence}%</span>
               </div>
               <div className="h-1.5 w-full bg-zinc-900 rounded-full overflow-hidden border border-white/[0.06]">
                 <div
                   className="h-full bg-white rounded-full transition-all duration-500"
-                  style={{ width: `${scenario.confidence}%` }}
+                  style={{ width: `${activeConfidence}%` }}
                 ></div>
               </div>
             </div>
@@ -132,11 +152,11 @@ export const DashboardScreen = () => {
                 </div>
                 <div className="flex items-center justify-between text-xs font-mono">
                   <span className="text-zinc-500">Valence:</span>
-                  <span className="text-zinc-200 font-medium">{scenario.valence > 0 ? `+${scenario.valence}` : scenario.valence}</span>
+                  <span className="text-zinc-200 font-medium">{activeValence > 0 ? `+${activeValence}` : activeValence}</span>
                 </div>
                 <div className="flex items-center justify-between text-xs font-mono">
                   <span className="text-zinc-500">Arousal:</span>
-                  <span className="text-zinc-200 font-medium">{scenario.arousal > 0 ? `+${scenario.arousal}` : scenario.arousal}</span>
+                  <span className="text-zinc-200 font-medium">{activeArousal > 0 ? `+${activeArousal}` : activeArousal}</span>
                 </div>
               </div>
             </div>
@@ -161,7 +181,7 @@ export const DashboardScreen = () => {
                   if (isSpeaking) {
                     stopSpeaking();
                   } else {
-                    speakAssistantMessage(scenario.assistantMessage);
+                    speakAssistantMessage(activeAssistantMsg);
                   }
                 }}
                 className={`px-2.5 py-1 rounded-lg text-xs font-mono font-medium flex items-center space-x-1.5 border transition-all ${
@@ -178,8 +198,12 @@ export const DashboardScreen = () => {
 
             {/* Assistant Speech Bubble */}
             <div className="p-3.5 rounded-lg bg-zinc-900/90 border border-white/[0.06] relative space-y-1.5">
-              <p className="text-xs sm:text-sm text-zinc-200 leading-relaxed font-sans">
-                "{scenario.assistantMessage}"
+              <div className="flex items-center justify-between text-[10px] font-mono text-zinc-400 pb-1 border-b border-white/[0.04]">
+                <span>To: <strong className="text-zinc-200">{activePersonName} ({activePersonRole})</strong></span>
+                <span className="text-emerald-400">{isLive ? 'Live Dynamic Policy' : 'Context Adaptive'}</span>
+              </div>
+              <p className="text-xs sm:text-sm text-zinc-200 leading-relaxed font-sans pt-1">
+                "{activeAssistantMsg}"
               </p>
 
               {/* Animated audio wave indicator if speaking */}

@@ -1,6 +1,6 @@
 {
   "user_id": "ID_ALEX_01",
-  "timestamp": 1792122119.4571538,
+  "timestamp": 1792124431.8800406,
   "calibration_samples": 0,
   "baseline_means": {
     "AU4": 0.05,
@@ -17,11 +17,11 @@
     "EAR": 0.3
   },
   "emotion_bias": {
-    "frustrated": -0.02,
-    "stressed": -0.02,
-    "happy": -0.02,
-    "calm": 0.1,
-    "neutral": -0.02
+    "frustrated": -0.01,
+    "stressed": -0.01,
+    "happy": -0.01,
+    "calm": 0.05,
+    "neutral": -0.01
   },
   "plasticity_index": 0.85,
   "stability_index": 0.94

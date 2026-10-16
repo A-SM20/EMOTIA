@@ -7,6 +7,7 @@ export const CameraHUD = () => {
     scenario,
     cameraActive,
     setCameraActive,
+    updateStreamActive,
     backendStatus,
     liveData,
     useLiveVideo,
@@ -311,6 +312,11 @@ export const CameraHUD = () => {
 
               {/* Top-Right Tracking Badge */}
               <div className="absolute top-3 right-3 bg-zinc-900/90 backdrop-blur-md px-2.5 py-1 rounded-md border border-white/[0.08] text-[10px] font-mono text-zinc-300 flex items-center space-x-1.5">
+                {liveData?.person?.name && (
+                  <span className="text-emerald-400 font-semibold mr-1.5 border-r border-white/10 pr-1.5">
+                    👤 {liveData.person.name}
+                  </span>
+                )}
                 <span className="text-zinc-400">Target:</span>
                 <span className="text-white font-bold uppercase">{liveData?.emotion || scenario.label} ({Math.round((liveData?.confidence || 0.85) * 100)}%)</span>
               </div>
@@ -490,7 +496,14 @@ export const CameraHUD = () => {
       <div className="bg-[#151518] border-t border-white/[0.08] px-3 py-2 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center space-x-2">
           <button
-            onClick={() => setCameraActive(!cameraActive)}
+            onClick={() => {
+              const nextState = !cameraActive;
+              if (updateStreamActive) {
+                updateStreamActive(nextState);
+              } else {
+                setCameraActive(nextState);
+              }
+            }}
             className={`px-2.5 py-1 rounded-md text-xs font-mono flex items-center space-x-1.5 border transition-all ${
               cameraActive
                 ? 'bg-zinc-800 text-white border-white/20'

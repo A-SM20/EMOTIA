@@ -52,6 +52,7 @@ class FaceDetector:
         self.face_cascade = cv2.CascadeClassifier(face_cascade_path)
         self.eye_cascade = cv2.CascadeClassifier(eye_cascade_path)
         self.smile_cascade = cv2.CascadeClassifier(smile_cascade_path)
+        self._ema_probs: Optional[Dict[str, float]] = None
 
         self._latest_result: Dict = {
             "detected": False,
@@ -83,7 +84,7 @@ class FaceDetector:
             "latency_ms": 0.0,
         }
 
-    def process_frame(self, frame_bgr: np.ndarray, draw_overlay: bool = True) -> Tuple[Dict, np.ndarray]:
+    def process_frame(self, frame_bgr: np.ndarray, draw_overlay: bool = True, person_name: str = "Ananth") -> Tuple[Dict, np.ndarray]:
         """
         Processes a BGR frame, extracts facial telemetry, and optionally draws a futuristic HUD.
         Returns: (result_dict, annotated_frame_bgr)
@@ -141,18 +142,31 @@ class FaceDetector:
         smile_detected = len(smiles) > 0
         eyes_detected = len(eyes) >= 2
 
-        # AU12 (Smile)
-        au12 = 0.82 if smile_detected else 0.05
+        # AU12 (Lip Corner Puller / Smile): measure smile geometry & presence
+        if smile_detected:
+            sx, sy, sw, sh = smiles[0]
+            mouth_width_ratio = sw / max(1.0, fw)
+            au12 = round(float(np.clip(0.35 + 1.2 * (mouth_width_ratio - 0.25), 0.25, 0.95)), 3)
+        else:
+            au12 = 0.05
+
         # AU45 (Blink): eyes closed if face is large but 0 eyes detected
         au45 = 1.0 if (len(eyes) == 0 and fw > 100) else 0.0
-        # AU4 (Brow Lowerer) and AU15 (Frown)
-        # Intensity estimation from vertical brow gradient
-        brow_roi = face_gray[int(fh * 0.12):int(fh * 0.30), int(fw * 0.25):int(fw * 0.75)]
-        brow_std = float(np.std(brow_roi)) if brow_roi.size > 0 else 20.0
-        # Higher contrast/wrinkling in glabella = higher AU4
-        au4 = round(float(np.clip((brow_std - 18.0) / 32.0, 0.05, 0.95)), 3)
-        au15 = 0.75 if (not smile_detected and au4 > 0.60) else 0.08
-        au7 = 0.65 if (len(eyes) == 1 and not is_blinking_bool(au45)) else 0.10
+
+        # AU4 (Brow Lowerer / Corrugator Furrow):
+        # Measure vertical wrinkle edges in glabella (center brow region)
+        glabella_roi = face_gray[int(fh * 0.16):int(fh * 0.30), int(fw * 0.38):int(fw * 0.62)]
+        if glabella_roi.size > 20:
+            sobel_x = cv2.Sobel(glabella_roi, cv2.CV_64F, 1, 0, ksize=3)
+            edge_density = float(np.mean(np.abs(sobel_x)))
+            # Normal smooth skin: edge_density < 16. Wrinkled furrow: > 28
+            au4 = round(float(np.clip((edge_density - 14.0) / 28.0, 0.05, 0.95)), 3)
+        else:
+            au4 = 0.08
+
+        # AU15 (Lip Corner Depressor / Frown)
+        au15 = 0.60 if (not smile_detected and au4 > 0.50 and not eyes_detected) else 0.06
+        au7 = 0.50 if (len(eyes) == 1 and au45 < 0.5) else 0.08
 
         action_units = {
             "AU4": round(float(au4), 3),
@@ -212,11 +226,31 @@ class FaceDetector:
             "roll": round(float(roll), 2),
         }
 
-        # 5. Affect Classification
-        probs = self._classify_action_units(action_units)
+        # 5. Affect Classification with Temporal Smoothing
+        raw_probs = self._classify_action_units(action_units)
+        if self._ema_probs is None:
+            self._ema_probs = raw_probs
+        else:
+            self._ema_probs = {
+                k: round(0.65 * self._ema_probs[k] + 0.35 * raw_probs[k], 3)
+                for k in raw_probs
+            }
+
+        probs = self._ema_probs
         dominant_emotion = max(probs, key=lambda k: probs[k])
         confidence = probs[dominant_emotion]
         latency = round((time.time() - t_start) * 1000, 2)
+
+        # 6. Biometric Facial Signature for Person Identification
+        eye_span = (landmarks[263].x - landmarks[33].x) / max(0.01, (fw / w))
+        chin_dist = (landmarks[152].y - landmarks[1].y) / max(0.01, (fh / h))
+        nose_mouth_dist = (landmarks[13].y - landmarks[1].y) / max(0.01, (fh / h))
+        aspect = round(fw / max(1.0, fh), 3)
+
+        face_metrics = {
+            "valid": True,
+            "vector": [round(float(eye_span), 3), round(float(chin_dist), 3), round(float(nose_mouth_dist), 3), aspect]
+        }
 
         with self._lock:
             self._latest_result = {
@@ -231,13 +265,14 @@ class FaceDetector:
                 "probabilities": probs,
                 "landmarks_count": len(landmarks),
                 "landmarks": landmarks,
+                "face_metrics": face_metrics,
                 "latency_ms": latency,
             }
             res = self._latest_result.copy()
 
         # 6. Draw HUD overlays
         if draw_overlay:
-            self._draw_hud(annotated, bbox, norm_cx, norm_cy, action_units, head_pose, dominant_emotion, confidence, landmarks)
+            self._draw_hud(annotated, bbox, norm_cx, norm_cy, action_units, head_pose, dominant_emotion, confidence, landmarks, person_name)
 
         return res, annotated
 
@@ -304,20 +339,22 @@ class FaceDetector:
         au15 = au["AU15"]
         au7 = au["AU7"]
 
+        is_relaxed = (au4 < 0.22) and (au12 < 0.25) and (au15 < 0.18)
+
         scores = {
-            "frustrated": 0.05 + 0.70 * au4 + 0.25 * au15,
-            "stressed": 0.05 + 0.45 * au4 + 0.35 * au7,
-            "happy": 0.05 + 0.85 * au12,
-            "calm": 0.15 + (1.0 - max(au4, au12, au15, au7)) * 0.70,
-            "neutral": 0.20 + (1.0 - max(au4, au12, au15, au7)) * 0.50,
+            "neutral": 0.65 if is_relaxed else 0.12,
+            "calm": 0.55 if is_relaxed else 0.10,
+            "happy": 0.05 + 1.25 * au12 if au12 > 0.28 else 0.04,
+            "frustrated": 0.05 + 1.15 * au4 + 0.35 * au15 if au4 > 0.35 else 0.05,
+            "stressed": 0.05 + 0.60 * au4 + 0.60 * au7 if (au4 > 0.30 or au7 > 0.35) else 0.05,
         }
 
-        exp_scores = {k: np.exp(v * 2.5) for k, v in scores.items()}
+        exp_scores = {k: np.exp(v * 2.8) for k, v in scores.items()}
         total_exp = sum(exp_scores.values()) or 1.0
         return {k: round(float(v / total_exp), 3) for k, v in exp_scores.items()}
 
     def _draw_hud(self, img: np.ndarray, bbox: List[int], ncx: float, ncy: float,
-                  au: Dict, pose: Dict, emotion: str, conf: float, landmarks):
+                  au: Dict, pose: Dict, emotion: str, conf: float, landmarks, person_name: str = "Ananth"):
         """Render futuristic sci-fi HUD telemetry directly onto video frame."""
         x1, y1, x2, y2 = bbox
         h, w = img.shape[:2]
@@ -347,10 +384,11 @@ class FaceDetector:
             px, py = int(lm.x * w), int(lm.y * h)
             cv2.circle(img, (px, py), 1, (255, 255, 255), -1)
 
-        # Top HUD Banner: Emotion + Confidence
-        label_text = f"TARGET: {emotion.upper()} ({int(conf * 100)}%)"
-        cv2.rectangle(img, (x1, max(0, y1 - 22)), (x1 + 180, y1), (20, 20, 24), -1)
-        cv2.putText(img, label_text, (x1 + 4, y1 - 6), cv2.FONT_HERSHEY_SIMPLEX, 0.42, color, 1, cv2.LINE_AA)
+        # Top HUD Banner: Person + Emotion + Confidence
+        label_text = f"{person_name.upper()} | {emotion.upper()} ({int(conf * 100)}%)"
+        tag_width = max(190, len(label_text) * 8 + 12)
+        cv2.rectangle(img, (x1, max(0, y1 - 24)), (x1 + tag_width, y1), (20, 20, 24), -1)
+        cv2.putText(img, label_text, (x1 + 6, y1 - 7), cv2.FONT_HERSHEY_SIMPLEX, 0.42, color, 1, cv2.LINE_AA)
 
         # Bottom-left Telemetry Box
         cv2.rectangle(img, (10, h - 90), (220, h - 10), (15, 15, 18), -1)

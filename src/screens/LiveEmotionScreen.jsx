@@ -25,12 +25,43 @@ import {
 export const LiveEmotionScreen = () => {
   const { scenario, emotionHistory, liveData, backendStatus } = useEmotion();
 
-  const isLive = backendStatus === 'connected' && liveData;
-  const activeLabel = isLive && liveData.emotion ? liveData.emotion.charAt(0).toUpperCase() + liveData.emotion.slice(1) : scenario.label;
-  const activeConfidence = isLive && liveData.confidence ? Math.round(liveData.confidence * 100) : scenario.confidence;
-  const activeValence = isLive && liveData.valence !== undefined ? liveData.valence : scenario.valence;
-  const activeArousal = isLive && liveData.arousal !== undefined ? liveData.arousal : scenario.arousal;
-  const activeLatency = isLive && liveData.latency_ms ? `${liveData.latency_ms}ms` : '11.2ms';
+  const isLive = backendStatus === 'connected' && !!liveData;
+  const activeLabel = isLive && liveData.emotion ? (liveData.emotion.charAt(0).toUpperCase() + liveData.emotion.slice(1)) : scenario.label;
+  const activeConfidence = isLive && liveData.confidence != null ? Math.round(liveData.confidence * 100) : scenario.confidence;
+  const activeValence = isLive && liveData.valence !== undefined ? Number(liveData.valence).toFixed(2) : scenario.valence;
+  const activeArousal = isLive && liveData.arousal !== undefined ? Number(liveData.arousal).toFixed(2) : scenario.arousal;
+  const activeLatency = isLive && liveData?.face?.latency_ms ? `${liveData.face.latency_ms}ms` : '11.2ms';
+  const activePersonName = liveData?.person?.name || 'Ananth';
+
+  const facialConfidence = isLive && liveData?.face?.confidence != null ? Math.round(liveData.face.confidence * 100) : scenario.modalities.facial.confidence;
+  const facialUnits = isLive && liveData?.face?.action_units ? [
+    `AU4 (Brow Lowerer: ${(liveData.face.action_units.AU4 || 0).toFixed(2)})`,
+    `AU12 (Lip Corner Puller: ${(liveData.face.action_units.AU12 || 0).toFixed(2)})`,
+    `AU15 (Lip Corner Depressor: ${(liveData.face.action_units.AU15 || 0).toFixed(2)})`,
+  ] : scenario.modalities.facial.detectedUnits;
+
+  const vocalConfidence = isLive && liveData?.speech?.confidence != null ? Math.round(liveData.speech.confidence * 100) : scenario.modalities.vocal.confidence;
+  const vocalUnits = isLive ? (liveData?.speech?.active ? [
+    'Signal: Voice Activity Detected',
+    `Energy: ${(liveData.speech.energy || 0).toFixed(3)}`,
+    `Acoustic Affect: ${liveData.speech.emotion || 'neutral'}`
+  ] : [
+    'Signal: Silent / Ambient Desk',
+    'Acoustic Front-End: Wav2Vec2.0 Ready',
+    'Voice Activity: Listening'
+  ]) : scenario.modalities.vocal.detectedUnits;
+
+  const fusedConfidence = activeConfidence;
+  const fusedUnits = isLive && liveData?.xai ? [
+    `Attention Weight Vision: ${Math.round((liveData.xai.vision_weight || 0.48) * 100)}%`,
+    `Attention Weight Audio: ${Math.round((liveData.xai.speech_weight || 0.32) * 100)}%`,
+    `Attention Weight Context: ${Math.round((liveData.xai.context_weight || 0.20) * 100)}%`,
+  ] : scenario.modalities.fused.detectedUnits;
+
+  const emotionDist = isLive && liveData?.face?.probabilities ? Object.entries(liveData.face.probabilities).map(([name, prob]) => ({
+    name: name.charAt(0).toUpperCase() + name.slice(1),
+    percentage: Math.round(prob * 100)
+  })).sort((a, b) => b.percentage - a.percentage) : scenario.emotionDistribution;
 
   return (
     <div className="space-y-5 animate-fadeIn">
@@ -46,8 +77,13 @@ export const LiveEmotionScreen = () => {
               {scenario.emoji}
             </div>
             <div className="space-y-1">
-              <div className="text-[10px] font-mono uppercase tracking-wider text-zinc-500 font-medium">
-                Fused Affect Prediction {isLive && '• LIVE TELEMETRY'}
+              <div className="text-[10px] font-mono uppercase tracking-wider text-zinc-500 font-medium flex items-center space-x-2">
+                <span>Fused Affect Prediction {isLive && '• LIVE TELEMETRY'}</span>
+                {isLive && (
+                  <span className="px-1.5 py-0.2 rounded bg-zinc-800 text-emerald-400 border border-emerald-500/30 text-[9px]">
+                    👤 {activePersonName}
+                  </span>
+                )}
               </div>
               <h1 className="text-3xl font-bold tracking-tight text-white">
                 {activeLabel}
@@ -131,21 +167,21 @@ export const LiveEmotionScreen = () => {
                 </div>
               </div>
               <span className="text-xs font-mono font-medium text-white">
-                {scenario.modalities.facial.confidence}%
+                {facialConfidence}%
               </span>
             </div>
 
             <div className="h-1 w-full bg-zinc-900 rounded-full overflow-hidden">
               <div
                 className="h-full bg-white rounded-full transition-all duration-500"
-                style={{ width: `${scenario.modalities.facial.confidence}%` }}
+                style={{ width: `${facialConfidence}%` }}
               ></div>
             </div>
 
             <div className="space-y-1.5 pt-1">
               <div className="text-[10px] font-mono uppercase text-zinc-500">Action Units (AU):</div>
               <div className="space-y-1">
-                {scenario.modalities.facial.detectedUnits.map((au, i) => (
+                {facialUnits.map((au, i) => (
                   <div key={i} className="text-xs font-mono bg-zinc-900 px-2 py-1 rounded text-zinc-300 border border-white/[0.06]">
                     {au}
                   </div>
@@ -167,21 +203,21 @@ export const LiveEmotionScreen = () => {
                 </div>
               </div>
               <span className="text-xs font-mono font-medium text-white">
-                {scenario.modalities.vocal.confidence}%
+                {vocalConfidence}%
               </span>
             </div>
 
             <div className="h-1 w-full bg-zinc-900 rounded-full overflow-hidden">
               <div
                 className="h-full bg-white rounded-full transition-all duration-500"
-                style={{ width: `${scenario.modalities.vocal.confidence}%` }}
+                style={{ width: `${vocalConfidence}%` }}
               ></div>
             </div>
 
             <div className="space-y-1.5 pt-1">
               <div className="text-[10px] font-mono uppercase text-zinc-500">Prosody Vectors:</div>
               <div className="space-y-1">
-                {scenario.modalities.vocal.detectedUnits.map((feat, i) => (
+                {vocalUnits.map((feat, i) => (
                   <div key={i} className="text-xs font-mono bg-zinc-900 px-2 py-1 rounded text-zinc-300 border border-white/[0.06]">
                     {feat}
                   </div>
@@ -203,21 +239,21 @@ export const LiveEmotionScreen = () => {
                 </div>
               </div>
               <span className="text-xs font-mono font-semibold text-white bg-zinc-800 px-2 py-0.5 rounded border border-white/[0.08]">
-                {scenario.modalities.fused.confidence}%
+                {fusedConfidence}%
               </span>
             </div>
 
             <div className="h-1 w-full bg-zinc-900 rounded-full overflow-hidden">
               <div
                 className="h-full bg-white rounded-full transition-all duration-500"
-                style={{ width: `${scenario.modalities.fused.confidence}%` }}
+                style={{ width: `${fusedConfidence}%` }}
               ></div>
             </div>
 
             <div className="space-y-1.5 pt-1">
               <div className="text-[10px] font-mono uppercase text-zinc-500">Attention Layer:</div>
               <div className="space-y-1">
-                {scenario.modalities.fused.detectedUnits.map((weight, i) => (
+                {fusedUnits.map((weight, i) => (
                   <div key={i} className="text-xs font-mono bg-zinc-900 px-2 py-1 rounded text-zinc-200 border border-white/[0.06]">
                     {weight}
                   </div>
@@ -243,7 +279,7 @@ export const LiveEmotionScreen = () => {
           </div>
 
           <div className="space-y-2.5">
-            {scenario.emotionDistribution.map((item) => (
+            {emotionDist.map((item) => (
               <div key={item.name} className="space-y-1">
                 <div className="flex items-center justify-between text-xs font-mono">
                   <span className="text-zinc-300">{item.name}</span>

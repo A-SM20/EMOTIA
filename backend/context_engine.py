@@ -99,8 +99,8 @@ class ContextAwareEngine:
         can_trigger = (now - self.last_intervention_time) > self.intervention_cooldown
 
         if work_state == "Cognitive Overload":
-            proactive_action = "Offer automated syntax check & suggest a 5-min cognitive break"
-            assistant_speech = "You seem frustrated with this syntax issue... would you like me to help break the problem into smaller steps or run a quick tensor shape diff check?"
+            proactive_action = "Intense cognitive effort detected; suggest brief 2-min visual rest"
+            assistant_speech = "I notice high cognitive focus and sustained intensity. Consider taking a quick 2-minute breather."
             hardware_recommendation = {
                 "servo_action": "tilt",     # gentle attentive head tilt
                 "light_mode": "warm_focus", # warm 3000K to ease eye strain
@@ -112,8 +112,8 @@ class ContextAwareEngine:
                 self.last_intervention_time = now
 
         elif work_state == "Fatigued":
-            proactive_action = "Recommend ergonomic posture adjustment and hydration pause"
-            assistant_speech = "Your blink frequency has decreased and eye fatigue is elevated. Consider taking a 2-minute ocular rest."
+            proactive_action = "Recommend ergonomic posture adjustment and ocular rest"
+            assistant_speech = "Your blink frequency has decreased and eye fatigue is elevated. Consider taking a brief rest."
             hardware_recommendation = {
                 "servo_action": "nod",
                 "light_mode": "circadian_boost",
@@ -125,24 +125,38 @@ class ContextAwareEngine:
                 self.last_intervention_time = now
 
         elif work_state == "Deep Flow":
-            proactive_action = "Suppress non-urgent peripheral notifications; maintain uninterrupted lighting"
+            proactive_action = "Suppress non-urgent peripheral notifications; maintain focus lighting"
             assistant_speech = "You are in steady flow. I will keep peripheral distractions minimized."
             hardware_recommendation = {
-                "servo_action": "track",    # track face gently or stay centered
+                "servo_action": "track",
                 "light_mode": "flow",
                 "light_brightness": 70,
                 "light_color_temp": "balanced",
             }
 
         elif emotion == "happy":
-            proactive_action = "Acknowledge successful milestone and archive experiment telemetry"
-            assistant_speech = "Great progress on this run! Checkpoint logs and validation plots are pre-rendered."
+            proactive_action = "Acknowledge positive momentum and progress"
+            assistant_speech = "Great momentum! Your work is progressing smoothly."
             hardware_recommendation = {
                 "servo_action": "nod",
                 "light_mode": "accent_green",
                 "light_brightness": 80,
                 "light_color_temp": "warm",
             }
+
+        elif emotion == "calm":
+            proactive_action = "Calm steady workspace maintained"
+            assistant_speech = "Workstation environment stable. Focus rhythm is calm and steady."
+            hardware_recommendation = {
+                "servo_action": "center",
+                "light_mode": "circadian",
+                "light_brightness": 75,
+                "light_color_temp": "neutral",
+            }
+
+        else:
+            proactive_action = "Continuous unobtrusive monitoring"
+            assistant_speech = "System tracking active. Standing by for any questions or tasks."
 
         return {
             "taskContext": self.active_task,

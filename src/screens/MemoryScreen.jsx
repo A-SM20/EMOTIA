@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useEmotion } from '../context/EmotionContext';
 import { LEARNED_PREFERENCES_MOCK } from '../data/mockScenarios';
 import {
@@ -6,7 +6,11 @@ import {
   User,
   History,
   Tag,
-  AlertCircle
+  AlertCircle,
+  Edit3,
+  Save,
+  CheckCircle2,
+  Users
 } from 'lucide-react';
 import {
   BarChart,
@@ -19,8 +23,43 @@ import {
 } from 'recharts';
 
 export const MemoryScreen = () => {
-  const { userProfile, liveData, backendStatus, memories, fetchMemories } = useEmotion();
+  const { userProfile, liveData, backendStatus, memories, fetchMemories, updatePersonProfile } = useEmotion();
   const cl = liveData?.continual_learning;
+
+  const [isEditing, setIsEditing] = useState(false);
+  const activePerson = liveData?.person || memories?.persons?.[memories?.active_person_id || 'user_1'] || {
+    id: 'user_1',
+    name: userProfile?.name || 'Ananth',
+    role: userProfile?.role || 'Lead Researcher',
+    notes: 'Primary researcher. Working on EMOTIA HRI multimodal system. Prefers calm focus environment.',
+    session_count: 14,
+  };
+
+  const [editName, setEditName] = useState(activePerson.name || 'Ananth');
+  const [editRole, setEditRole] = useState(activePerson.role || 'Lead Researcher');
+  const [editNotes, setEditNotes] = useState(activePerson.notes || '');
+
+  useEffect(() => {
+    if (activePerson) {
+      setEditName(activePerson.name || 'Ananth');
+      setEditRole(activePerson.role || 'Lead Researcher');
+      setEditNotes(activePerson.notes || '');
+    }
+  }, [activePerson?.id, activePerson?.name, activePerson?.notes]);
+
+  const handleSaveProfile = async (e) => {
+    e.preventDefault();
+    if (updatePersonProfile) {
+      await updatePersonProfile({
+        person_id: activePerson.id || 'user_1',
+        name: editName,
+        role: editRole,
+        notes: editNotes,
+      });
+      setIsEditing(false);
+      if (fetchMemories) fetchMemories();
+    }
+  };
 
   useEffect(() => {
     if (fetchMemories) {
@@ -49,10 +88,10 @@ export const MemoryScreen = () => {
             </div>
             <div>
               <div className="text-[10px] font-mono uppercase tracking-wider text-zinc-500 font-medium">
-                Cognitive State & Continual Learning
+                Cognitive State & Person Identification Memory
               </div>
               <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-                Episodic Memory & Profile
+                Episodic Memory & Person Profile
               </h1>
             </div>
           </div>
@@ -64,7 +103,7 @@ export const MemoryScreen = () => {
               </span>
             )}
             <div className="flex items-center space-x-2 bg-zinc-900 border border-white/[0.08] px-2.5 py-1 rounded-lg text-xs font-mono text-zinc-400">
-              <span>Profile: {cl?.user_id || 'ID_ALEX_01'}</span>
+              <span>Person: {activePerson.name || 'Ananth'} ({activePerson.id || 'user_1'})</span>
             </div>
           </div>
         </div>
@@ -101,57 +140,125 @@ export const MemoryScreen = () => {
               <div className="flex items-center space-x-2">
                 <User className="w-4 h-4 text-zinc-400" />
                 <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-300 font-mono">
-                  Participant Persona
+                  Identified Person Profile
                 </h2>
               </div>
-              <span className="text-[10px] font-mono text-zinc-400 bg-zinc-900 border border-white/[0.08] px-2 py-0.5 rounded-full">
-                Active
-              </span>
+              <div className="flex items-center space-x-1.5">
+                <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-2 py-0.5 rounded-full flex items-center space-x-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span>{liveData?.person ? 'Biometric Match' : 'Persistent ID'}</span>
+                </span>
+                <button
+                  onClick={() => setIsEditing(!isEditing)}
+                  className="p-1 rounded bg-zinc-800 text-zinc-300 hover:text-white border border-white/[0.08] text-xs transition-colors"
+                  title={isEditing ? 'Cancel editing' : 'Edit profile & notes'}
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
 
-            {/* Profile Fields */}
-            <div className="space-y-3">
-              <div>
-                <label className="text-[11px] font-mono text-zinc-500">Name</label>
-                <div className="text-sm font-semibold text-white mt-0.5">{userProfile?.name || 'Dr. Alex Vance'}</div>
-                <div className="text-xs text-zinc-400">{userProfile?.role || 'Senior HRI Researcher'} • {userProfile?.institution || 'Human-Robot Interaction Lab'}</div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-                <div className="bg-zinc-900/80 p-2.5 rounded-lg border border-white/[0.06]">
-                  <span className="text-[10px] font-mono uppercase text-zinc-500">Preferred Style</span>
-                  <div className="text-xs font-medium text-zinc-200 mt-0.5">{userProfile?.preferredStyle || 'Detailed & Proactive'}</div>
+            {/* Profile Fields or Edit Form */}
+            {isEditing ? (
+              <form onSubmit={handleSaveProfile} className="space-y-3">
+                <div>
+                  <label className="text-[10px] font-mono text-zinc-400 uppercase">Person Name</label>
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="w-full bg-zinc-900 border border-white/[0.12] rounded px-2.5 py-1.5 text-xs text-white mt-1 focus:outline-none focus:border-white/30"
+                    placeholder="e.g. Ananth"
+                  />
                 </div>
-
-                <div className="bg-zinc-900/80 p-2.5 rounded-lg border border-white/[0.06]">
-                  <span className="text-[10px] font-mono uppercase text-zinc-500">Active Focus</span>
-                  <div className="text-xs font-medium text-zinc-200 mt-0.5 truncate">{userProfile?.currentFocus || 'Multimodal Fusion & Explainable Emotion AI'}</div>
+                <div>
+                  <label className="text-[10px] font-mono text-zinc-400 uppercase">Role / Title</label>
+                  <input
+                    type="text"
+                    value={editRole}
+                    onChange={(e) => setEditRole(e.target.value)}
+                    className="w-full bg-zinc-900 border border-white/[0.12] rounded px-2.5 py-1.5 text-xs text-white mt-1 focus:outline-none focus:border-white/30"
+                    placeholder="e.g. Lead Researcher"
+                  />
                 </div>
-              </div>
-
-              {/* Interest Tags */}
-              <div className="space-y-1.5 pt-1">
-                <label className="text-[11px] font-mono text-zinc-500 flex items-center gap-1">
-                  <Tag className="w-3 h-3 text-zinc-400" />
-                  <span>Domain Ontology Tags</span>
-                </label>
-                <div className="flex flex-wrap gap-1.5">
-                  {(userProfile?.interests || ['Affective HRI', 'Multimodal Attention', 'Neuro-Symbolic XAI', 'PyTorch']).map((tag, i) => (
-                    <span
-                      key={i}
-                      className="px-2 py-0.5 rounded-md text-xs font-mono bg-zinc-900 text-zinc-300 border border-white/[0.08]"
-                    >
-                      #{tag}
+                <div>
+                  <label className="text-[10px] font-mono text-zinc-400 uppercase">Learned Notes & Pacing Preferences</label>
+                  <textarea
+                    rows={3}
+                    value={editNotes}
+                    onChange={(e) => setEditNotes(e.target.value)}
+                    className="w-full bg-zinc-900 border border-white/[0.12] rounded px-2.5 py-1.5 text-xs text-white mt-1 focus:outline-none focus:border-white/30"
+                    placeholder="Personal quirks, fatigue thresholds, assistance preferences..."
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="w-full py-1.5 rounded bg-white text-black font-semibold text-xs flex items-center justify-center space-x-1.5 hover:bg-zinc-200 transition-colors"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  <span>Save Data to Memory Store</span>
+                </button>
+              </form>
+            ) : (
+              <div className="space-y-3">
+                <div>
+                  <label className="text-[11px] font-mono text-zinc-500">Name & Identification</label>
+                  <div className="text-base font-bold text-white mt-0.5 flex items-center space-x-2">
+                    <span>{activePerson.name || 'Ananth'}</span>
+                    <span className="text-[10px] font-mono font-normal px-2 py-0.5 rounded bg-zinc-800 text-zinc-400">
+                      ID: {activePerson.id || 'user_1'}
                     </span>
-                  ))}
+                  </div>
+                  <div className="text-xs text-zinc-400">{activePerson.role || 'Lead Researcher'} • {userProfile?.institution || 'Affective Computing & Robotics Lab'}</div>
+                </div>
+
+                <div className="bg-zinc-900/80 p-3 rounded-lg border border-white/[0.06] space-y-1">
+                  <div className="text-[10px] font-mono uppercase text-zinc-500">Learned Behavioral Notes</div>
+                  <p className="text-xs text-zinc-300 leading-relaxed font-sans">
+                    {activePerson.notes || 'Prefers calm focus environment, automated distraction suppression during deep flow coding, and warm 3000K circadian lighting.'}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <div className="bg-zinc-900/80 p-2.5 rounded-lg border border-white/[0.06]">
+                    <span className="text-[10px] font-mono uppercase text-zinc-500">Total Sessions</span>
+                    <div className="text-xs font-semibold font-mono text-zinc-200 mt-0.5">
+                      {activePerson.session_count || 14} Recorded
+                    </div>
+                  </div>
+
+                  <div className="bg-zinc-900/80 p-2.5 rounded-lg border border-white/[0.06]">
+                    <span className="text-[10px] font-mono uppercase text-zinc-500">Biometric Vector</span>
+                    <div className="text-xs font-mono text-emerald-400 mt-0.5">
+                      4D Normalized [OK]
+                    </div>
+                  </div>
+                </div>
+
+                {/* Interest Tags */}
+                <div className="space-y-1.5 pt-1">
+                  <label className="text-[11px] font-mono text-zinc-500 flex items-center gap-1">
+                    <Tag className="w-3 h-3 text-zinc-400" />
+                    <span>Domain Focus Tags</span>
+                  </label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(userProfile?.interests || ['Affective HRI', 'Multimodal Attention', 'Facial AU Perception', 'PyTorch']).map((tag, i) => (
+                      <span
+                        key={i}
+                        className="px-2 py-0.5 rounded-md text-xs font-mono bg-zinc-900 text-zinc-300 border border-white/[0.08]"
+                      >
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
 
           <div className="p-2.5 rounded-lg bg-zinc-900 border border-white/[0.08] text-[11px] text-zinc-400 font-mono flex items-center justify-between">
-            <span>Session: 4h 18m</span>
-            <span className="text-zinc-300">Context: 64k</span>
+            <span>Person Identified: <strong className="text-white">{activePerson.name || 'Ananth'}</strong></span>
+            <span className="text-emerald-400">Memory Sync: Active</span>
           </div>
         </div>
 

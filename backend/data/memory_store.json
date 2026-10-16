@@ -1,5 +1,30 @@
 {
-  "user_id": "DR_ALEX_VANCE",
+  "user_id": "usr_ananth",
+  "active_person_id": "user_1",
+  "persons": {
+    "user_1": {
+      "id": "user_1",
+      "name": "Ananth",
+      "role": "Lead Researcher",
+      "institution": "Affective Computing & Robotics Lab",
+      "notes": "Expert HRI",
+      "first_seen": "2026-10-15 08:00:00",
+      "last_seen": "2026-10-16 09:30:00",
+      "session_count": 14,
+      "preferences": {
+        "preferred_style": "Concise & Supportive",
+        "break_interval_min": 45,
+        "lighting_preference": "warm_focus"
+      },
+      "face_signature": [
+        0.42,
+        0.65,
+        0.22,
+        0.82
+      ],
+      "last_emotion": "Neutral"
+    }
+  },
   "preferences": [
     {
       "id": "pref_1",
@@ -27,6 +52,16 @@
     }
   ],
   "episodes": [
+    {
+      "id": "ep_1792124431",
+      "timestamp": "2026-10-16 09:50:31",
+      "task": "Test Execution",
+      "app": "PyTest",
+      "emotion": "Calm",
+      "cli": 30,
+      "summary": "Ran unit test suite successfully.",
+      "intervention": "Logged verification note"
+    },
     {
       "id": "ep_1792122119",
       "timestamp": "2026-10-16 09:11:59",

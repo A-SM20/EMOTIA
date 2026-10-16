@@ -119,9 +119,17 @@ def _pipeline_orchestrator():
             time.sleep(0.015)
             continue
 
+        # Active person profile
+        active_person = memory_engine.identify_or_register_person(None)
+        person_name = active_person.get("name", "Ananth")
+
         # 1. Vision Processing (MediaPipe FaceMesh + Action Units + 3D Pose)
-        face_res, annotated_frame = face_detector.process_frame(frame, draw_overlay=True)
+        face_res, annotated_frame = face_detector.process_frame(frame, draw_overlay=True, person_name=person_name)
         stream_capture.set_annotated_frame(annotated_frame)
+
+        # Update person biometric signature if face detected
+        if face_res.get("detected") and face_res.get("face_metrics"):
+            active_person = memory_engine.identify_or_register_person(face_res["face_metrics"])
 
         # 2. Eye Fatigue Telemetry
         fatigue_res = {
@@ -205,6 +213,8 @@ def _pipeline_orchestrator():
                     "perclos": fatigue_res.get("perclos", 0.0),
                     "alert": fatigue_res.get("alert", "alert"),
                 },
+                "person": active_person,
+                "assistant_message": context_res.get("assistantSpeech", "System active."),
                 "continual_learning": cl_telemetry,
                 "context": context_res,
                 "xai": xai_res,
@@ -255,6 +265,41 @@ def video_feed():
         stream_capture.generate_mjpeg_stream(),
         media_type="multipart/x-mixed-replace; boundary=frame"
     )
+
+
+class StreamActiveRequest(BaseModel):
+    active: bool
+
+
+@app.post("/api/stream/active")
+async def set_stream_active(req: StreamActiveRequest):
+    """Enable or disable camera hardware capture directly."""
+    stream_capture.set_active(req.active)
+    return {"status": "ok", "active": req.active}
+
+
+class PersonProfileRequest(BaseModel):
+    person_id: Optional[str] = "user_1"
+    name: Optional[str] = None
+    role: Optional[str] = None
+    notes: Optional[str] = None
+
+
+@app.post("/api/person/profile")
+async def update_person_profile(req: PersonProfileRequest):
+    """Update recognized person name, role, or notes."""
+    updates = {k: v for k, v in req.dict().items() if v is not None and k != "person_id"}
+    res = memory_engine.update_person_profile(req.person_id or "user_1", updates)
+    return res
+
+
+@app.get("/api/person/active")
+async def get_active_person():
+    """Get currently active identified person."""
+    data = memory_engine.load_data()
+    persons = data.get("persons", {})
+    active_id = data.get("active_person_id", "user_1")
+    return {"status": "ok", "person": persons.get(active_id, {})}
 
 
 class StreamConfigRequest(BaseModel):
@@ -426,22 +471,59 @@ async def add_memory_note(req: MemoryNoteRequest):
 
 # ── WebSocket Real-Time Broadcast ────────────────────────────────────────────
 _clients: Set[WebSocket] = set()
+_auto_pause_task: Optional[asyncio.Task] = None
+
+
+def _sanitize_for_json(obj):
+    """Recursively converts NumPy types to native Python types for clean JSON serialization."""
+    if isinstance(obj, (np.integer, getattr(np, 'int32', int), getattr(np, 'int64', int))):
+        return int(obj)
+    elif isinstance(obj, (np.floating, getattr(np, 'float32', float), getattr(np, 'float64', float))):
+        return float(obj)
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    elif isinstance(obj, dict):
+        return {k: _sanitize_for_json(v) for k, v in obj.items()}
+    elif isinstance(obj, (list, tuple)):
+        return [_sanitize_for_json(x) for x in obj]
+    elif isinstance(obj, (bool, str, type(None))):
+        return obj
+    return str(obj)
+
+
+async def _delayed_auto_pause(delay_seconds: float = 12.0):
+    """Pauses camera hardware if no clients reconnect within delay."""
+    await asyncio.sleep(delay_seconds)
+    if len(_clients) == 0:
+        print("[ws] No active clients for 12s — auto-releasing camera hardware")
+        stream_capture.set_active(False)
+
 
 @app.websocket("/ws")
 async def websocket_endpoint(ws: WebSocket):
     """Streams live comprehensive telemetry to connected frontend dashboards."""
+    global _auto_pause_task
     await ws.accept()
     _clients.add(ws)
+    # Cancel auto-pause task if running & wake camera
+    if _auto_pause_task and not _auto_pause_task.done():
+        _auto_pause_task.cancel()
+    stream_capture.set_active(True)
     print(f"[ws] Dashboard client connected ({len(_clients)} total)")
     try:
         while True:
             with _state_lock:
-                payload = json.dumps(_latest_state)
+                clean_state = _sanitize_for_json(_latest_state)
+                payload = json.dumps(clean_state)
             await ws.send_text(payload)
             await asyncio.sleep(0.15)  # broadcast every 150ms (~7 Hz smooth updates)
     except WebSocketDisconnect:
         _clients.discard(ws)
         print(f"[ws] Dashboard client disconnected ({len(_clients)} remaining)")
+        if len(_clients) == 0:
+            _auto_pause_task = asyncio.create_task(_delayed_auto_pause(12.0))
     except Exception as e:
         _clients.discard(ws)
         print(f"[ws] Error: {e}")
+        if len(_clients) == 0:
+            _auto_pause_task = asyncio.create_task(_delayed_auto_pause(12.0))

@@ -30,11 +30,30 @@ class StreamCapture:
         self._latest_frame: Optional[np.ndarray] = None
         self._annotated_frame: Optional[np.ndarray] = None
         self._is_running = False
+        self._is_active = True
         self._connected = False
+        self._current_cap = None
         self._source_type = "esp32"  # "esp32", "webcam", "synthetic"
         self._fps = 0.0
         self._frame_count = 0
         self._thread: Optional[threading.Thread] = None
+
+    def set_active(self, active: bool):
+        """Enable or disable camera hardware capture."""
+        with self._lock:
+            self._is_active = active
+            if not active:
+                self._connected = False
+                if self._current_cap is not None:
+                    try:
+                        self._current_cap.release()
+                    except Exception:
+                        pass
+                    self._current_cap = None
+                self._latest_frame = self._generate_blank_frame("Camera Inactive")
+                self._annotated_frame = self._latest_frame.copy()
+        state_str = "ENABLED" if active else "PAUSED / HARDWARE RELEASED"
+        print(f"[stream_capture] Camera hardware state: {state_str}")
 
     def start(self):
         """Start the background frame capture thread."""
@@ -107,6 +126,10 @@ class StreamCapture:
         frames_in_second = 0
 
         while self._is_running:
+            if not self._is_active:
+                time.sleep(0.1)
+                continue
+
             current_src = self.source
             # 1. Check if source is synthetic
             if str(current_src).lower() in ("synthetic", "test", "sim", "mock"):
@@ -184,12 +207,19 @@ class StreamCapture:
 
     def _read_webcam_stream(self, cam_idx: int) -> bool:
         """Read from local OpenCV webcam."""
+        if not self._is_active:
+            time.sleep(0.1)
+            return True
+
         cap = cv2.VideoCapture(cam_idx)
         if not cap.isOpened():
             cap = cv2.VideoCapture(cam_idx, cv2.CAP_DSHOW)
         if not cap.isOpened():
             print(f"[stream_capture] Webcam #{cam_idx} could not be opened")
             return False
+
+        with self._lock:
+            self._current_cap = cap
 
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
@@ -198,23 +228,36 @@ class StreamCapture:
         print(f"[stream_capture] Webcam #{cam_idx} opened [OK]")
 
         target_source = str(self.source)
-        while self._is_running and str(self.source) == target_source:
-            ret, frame = cap.read()
-            if not ret or frame is None:
-                break
-            if self.rotate_angle == 90:
-                frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
-            elif self.rotate_angle == 180:
-                frame = cv2.rotate(frame, cv2.ROTATE_180)
-            elif self.rotate_angle == 270:
-                frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
+        try:
+            while self._is_running and self._is_active and str(self.source) == target_source:
+                ret, frame = cap.read()
+                if not ret or frame is None:
+                    break
+                if self.rotate_angle == 90:
+                    frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
+                elif self.rotate_angle == 180:
+                    frame = cv2.rotate(frame, cv2.ROTATE_180)
+                elif self.rotate_angle == 270:
+                    frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
+                with self._lock:
+                    self._latest_frame = frame
+                    self._frame_count += 1
+                time.sleep(0.005)
+        finally:
             with self._lock:
-                self._latest_frame = frame
-                self._frame_count += 1
-            time.sleep(0.005)
-
-        cap.release()
+                self._current_cap = None
+            cap.release()
+            print(f"[stream_capture] Webcam #{cam_idx} closed and hardware released [OK]")
         return True
+
+    def _generate_blank_frame(self, text: str = "Camera Inactive") -> np.ndarray:
+        frame = np.zeros((self.height, self.width, 3), dtype=np.uint8)
+        frame[:] = (18, 18, 22)
+        cv2.putText(frame, text.upper(), (self.width // 2 - 120, self.height // 2),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (120, 120, 140), 2, cv2.LINE_AA)
+        cv2.putText(frame, "HARDWARE POWER OFF", (self.width // 2 - 100, self.height // 2 + 35),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.45, (80, 80, 100), 1, cv2.LINE_AA)
+        return frame
 
     def _generate_synthetic_frame(self, banner: Optional[str] = None):
         """

@@ -17,7 +17,7 @@ export const SCENARIOS = {
     activeApp: 'VS Code',
     valence: -0.62,
     arousal: 0.74,
-    assistantMessage: "You seem frustrated with this syntax issue... would you like me to help break the problem into smaller steps or run a quick tensor shape diff check?",
+    assistantMessage: "I notice elevated tension during this task... would you like me to minimize peripheral alerts, dim ambient lighting, or suggest a quick break?",
     proactiveAction: "Offer automated tensor shape inspection & suggest a 5-min cognitive break",
     shortExplanation: "Detected brow lowerer (AU4) and lip corner depressor (AU15) combined with acoustic pitch spikes after 3 hours continuous coding with repeated runtime errors.",
     detailedExplanation: "Model identified sustained Brow Lowerer (AU4, 89% intensity) and Lip Corner Depressor (AU15, 76% intensity) across the 120-frame temporal window. Concurrently, the acoustic front-end detected fundamental frequency variance spikes and vocal strain. The Context Engine weighted 192 minutes of uninterrupted debugging without test completion, resolving multimodal conflict toward Frustrated (87% confidence).",

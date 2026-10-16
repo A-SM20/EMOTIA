@@ -47,10 +47,24 @@ export const EmotionProvider = ({ children }) => {
           const data = JSON.parse(event.data);
           setLiveData(data);
 
-          // Map detected emotion to a scenario key for UI consistency
           const emotionKey = data.emotion;
           if (SCENARIOS[emotionKey]) {
             setCurrentScenarioKey(emotionKey);
+          }
+
+          // Sync camera active state if reported by backend stream
+          if (data.stream && typeof data.stream.active === 'boolean') {
+            setCameraActive(data.stream.active);
+          }
+
+          // Sync identified person profile if available
+          if (data.person && data.person.name) {
+            setUserProfile(prev => ({
+              ...prev,
+              name: data.person.name,
+              role: data.person.role || prev.role,
+              notes: data.person.notes || prev.notes,
+            }));
           }
 
           // Push live point into emotion history
@@ -95,6 +109,48 @@ export const EmotionProvider = ({ children }) => {
   }, [connectWS]);
 
   // ── Hardware & Backend REST Control API Dispatchers ───────────────────────
+  const updateStreamActive = useCallback(async (active) => {
+    setCameraActive(active);
+    try {
+      const res = await fetch(`${BACKEND_BASE_URL}/api/stream/active`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ active: !!active })
+      });
+      return await res.json();
+    } catch (e) {
+      console.warn('[EMOTIA] Failed to set stream active:', e);
+      return null;
+    }
+  }, []);
+
+  // Auto-release webcam hardware when closing tab or navigating away
+  useEffect(() => {
+    const handleUnload = () => {
+      try {
+        const payload = JSON.stringify({ active: false });
+        if (navigator.sendBeacon) {
+          navigator.sendBeacon(`${BACKEND_BASE_URL}/api/stream/active`, new Blob([payload], { type: 'application/json' }));
+        } else {
+          fetch(`${BACKEND_BASE_URL}/api/stream/active`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: payload,
+            keepalive: true
+          });
+        }
+      } catch (e) {
+        // ignore
+      }
+    };
+    window.addEventListener('beforeunload', handleUnload);
+    window.addEventListener('pagehide', handleUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleUnload);
+      window.removeEventListener('pagehide', handleUnload);
+    };
+  }, []);
+
   const updateStreamConfig = useCallback(async (sourceUrl) => {
     try {
       const res = await fetch(`${BACKEND_BASE_URL}/api/stream/config`, {
@@ -220,13 +276,36 @@ export const EmotionProvider = ({ children }) => {
 
   // User Profile state
   const [userProfile, setUserProfile] = useState({
-    name: 'Dr. Alex Vance',
-    role: 'Senior HRI Researcher',
-    institution: 'Human-Robot Interaction Lab',
-    preferredStyle: 'Detailed & Proactive',
-    currentFocus: 'Multimodal Fusion & Explainable Emotion AI',
-    interests: ['Affective HRI', 'Multimodal Attention', 'Neuro-Symbolic XAI', 'PyTorch', 'Robotics UI'],
+    name: 'Ananth',
+    role: 'Lead Researcher',
+    institution: 'Affective Computing & Robotics Lab',
+    preferredStyle: 'Concise & Supportive',
+    currentFocus: 'Multimodal Affective Interaction & Biometrics',
+    interests: ['Affective HRI', 'Multimodal Attention', 'Facial AU Perception', 'PyTorch', 'Robotics UI'],
   });
+
+  const updatePersonProfile = useCallback(async (profileData) => {
+    try {
+      const res = await fetch(`${BACKEND_BASE_URL}/api/person/profile`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(profileData)
+      });
+      const data = await res.json();
+      if (data.status === 'ok') {
+        setUserProfile(prev => ({
+          ...prev,
+          name: profileData.name || prev.name,
+          role: profileData.role || prev.role,
+          notes: profileData.notes || prev.notes,
+        }));
+      }
+      return data;
+    } catch (e) {
+      console.warn('[EMOTIA] Failed to update person profile:', e);
+      return null;
+    }
+  }, []);
 
   // Initial historical emotion data for recharts
   const [emotionHistory, setEmotionHistory] = useState(() => {
@@ -389,7 +468,7 @@ export const EmotionProvider = ({ children }) => {
       let replyText = `I understand. Based on your current ${currentScen.label.toLowerCase()} state (${currentScen.confidence}% confidence), I'm actively optimizing your workstation context and analyzing potential bottlenecks in ${currentScen.taskContext}.`;
       
       if (currentScen.id === 'frustrated') {
-        replyText = `I hear the urgency. Let me isolate the last failing submodule for you and run an automated syntax/shape validation so you don't have to keep digging through stack traces.`;
+        replyText = `I notice elevated intensity during this task. Let me minimize non-urgent alerts and adjust ambient lighting to reduce eye strain.`;
       } else if (currentScen.id === 'happy') {
         replyText = `That's great progress! I've archived the successful checkpoint logs and pre-rendered your validation plots for the final paper draft.`;
       } else if (currentScen.id === 'stressed') {
@@ -451,7 +530,10 @@ export const EmotionProvider = ({ children }) => {
     connectWS,
     useLiveVideo,
     setUseLiveVideo,
+    updateStreamActive,
     updateStreamConfig,
+    updatePersonProfile,
+    activePerson: liveData?.person || null,
     updateHardwareControl,
     updateHardwareTransport,
     updateEyeAnimation,
