@@ -55,16 +55,19 @@ class StreamCapture:
     def set_source(self, new_source: str, rotate_angle: Optional[int] = None):
         """Dynamically switch stream source without restarting backend."""
         with self._lock:
-            self.source = new_source
+            s_str = str(new_source).strip()
+            if s_str.lower() in ("webcam", "laptop", "cam", "camera"):
+                s_str = "0"
+            self.source = s_str
             if rotate_angle is not None:
                 self.rotate_angle = rotate_angle
-            elif str(new_source).startswith("http://") or str(new_source).startswith("https://"):
+            elif s_str.startswith("http://") or s_str.startswith("https://"):
                 # Default 90 degree clockwise rotation for sideways ESP32-CAM head mount
                 self.rotate_angle = 90
             else:
                 self.rotate_angle = 0
             self._connected = False
-        print(f"[stream_capture] Stream source switched to: {new_source} (rotation: {self.rotate_angle}°)")
+        print(f"[stream_capture] Stream source switched to: {self.source} (rotation: {self.rotate_angle}°)")
 
     def get_latest_frame(self) -> Tuple[bool, Optional[np.ndarray]]:
         """Return the most recent unanalyzed frame (thread-safe)."""
@@ -183,6 +186,9 @@ class StreamCapture:
         """Read from local OpenCV webcam."""
         cap = cv2.VideoCapture(cam_idx)
         if not cap.isOpened():
+            cap = cv2.VideoCapture(cam_idx, cv2.CAP_DSHOW)
+        if not cap.isOpened():
+            print(f"[stream_capture] Webcam #{cam_idx} could not be opened")
             return False
 
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
@@ -191,7 +197,8 @@ class StreamCapture:
         self._connected = True
         print(f"[stream_capture] Webcam #{cam_idx} opened [OK]")
 
-        while self._is_running and str(self.source) == str(cam_idx):
+        target_source = str(self.source)
+        while self._is_running and str(self.source) == target_source:
             ret, frame = cap.read()
             if not ret or frame is None:
                 break
@@ -204,6 +211,7 @@ class StreamCapture:
             with self._lock:
                 self._latest_frame = frame
                 self._frame_count += 1
+            time.sleep(0.005)
 
         cap.release()
         return True
@@ -293,6 +301,8 @@ class StreamCapture:
         """Generator for FastAPI StreamingResponse (/video_feed)."""
         while self._is_running:
             frame = self.get_annotated_frame()
+            if frame is None:
+                _, frame = self.get_latest_frame()
             if frame is None:
                 time.sleep(0.04)
                 continue

@@ -12,6 +12,7 @@ export const CameraHUD = () => {
     useLiveVideo,
     setUseLiveVideo,
     backendBaseUrl,
+    updateStreamConfig,
   } = useEmotion();
   const [showMesh, setShowMesh] = useState(true);
   const [recSeconds, setRecSeconds] = useState(1124);
@@ -291,10 +292,13 @@ export const CameraHUD = () => {
             /* Live ESP32-CAM / Video Feed Stream from FastAPI */
             <div className="relative w-full h-full flex items-center justify-center bg-black overflow-hidden group">
               <img
+                key={liveData?.stream?.source || 'feed'}
                 src={`${backendBaseUrl}/video_feed`}
                 alt="EMOTIA Live Stream Feed"
                 className="w-full h-full object-contain"
-                onError={() => setUseLiveVideo(false)}
+                onError={() => {
+                  console.warn('[CameraHUD] Video feed reconnecting...');
+                }}
               />
 
               {/* Top Source Badge */}
@@ -498,18 +502,38 @@ export const CameraHUD = () => {
           </button>
 
           {backendStatus === 'connected' && (
-            <button
-              onClick={() => setUseLiveVideo(!useLiveVideo)}
-              disabled={!cameraActive}
-              className={`px-2.5 py-1 rounded-md text-xs font-mono flex items-center space-x-1.5 border transition-all ${
-                useLiveVideo
-                  ? 'bg-emerald-950/80 text-emerald-300 border-emerald-500/40'
-                  : 'bg-zinc-900 text-zinc-400 border-white/[0.08] hover:text-white'
-              }`}
-            >
-              <ScanFace className="w-3.5 h-3.5" />
-              <span>{useLiveVideo ? 'Live Camera Feed' : '3D Wireframe'}</span>
-            </button>
+            <>
+              <button
+                onClick={() => setUseLiveVideo(!useLiveVideo)}
+                disabled={!cameraActive}
+                className={`px-2.5 py-1 rounded-md text-xs font-mono flex items-center space-x-1.5 border transition-all ${
+                  useLiveVideo
+                    ? 'bg-emerald-950/80 text-emerald-300 border-emerald-500/40'
+                    : 'bg-zinc-900 text-zinc-400 border-white/[0.08] hover:text-white'
+                }`}
+              >
+                <ScanFace className="w-3.5 h-3.5" />
+                <span>{useLiveVideo ? 'Live Camera Feed' : '3D Wireframe'}</span>
+              </button>
+
+              <button
+                onClick={async () => {
+                  const isLaptop = liveData?.stream?.source === '0' || liveData?.stream?.source_type === 'webcam';
+                  await updateStreamConfig(isLaptop ? 'synthetic' : '0');
+                  setUseLiveVideo(true);
+                }}
+                disabled={!cameraActive}
+                className={`px-2.5 py-1 rounded-md text-xs font-mono flex items-center space-x-1.5 border transition-all ${
+                  liveData?.stream?.source === '0' || liveData?.stream?.source_type === 'webcam'
+                    ? 'bg-cyan-950/80 text-cyan-300 border-cyan-500/40 font-semibold'
+                    : 'bg-zinc-900 text-zinc-400 border-white/[0.08] hover:text-white'
+                }`}
+                title="Toggle between Laptop Webcam (Index 0) and Synthetic Test Feed"
+              >
+                <Camera className="w-3.5 h-3.5" />
+                <span>{liveData?.stream?.source === '0' || liveData?.stream?.source_type === 'webcam' ? 'Laptop Cam (Active)' : 'Use Laptop Cam'}</span>
+              </button>
+            </>
           )}
 
           {!useLiveVideo && (

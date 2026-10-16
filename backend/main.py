@@ -248,7 +248,8 @@ async def health():
 
 @app.get("/api/stream/feed")
 @app.get("/video_feed")
-async def video_feed():
+@app.get("/api/stream/video")
+def video_feed():
     """Live MJPEG video stream with HUD overlays for web display."""
     return StreamingResponse(
         stream_capture.generate_mjpeg_stream(),

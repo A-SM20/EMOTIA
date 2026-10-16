@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useEmotion } from '../context/EmotionContext';
 import { LEARNED_PREFERENCES_MOCK } from '../data/mockScenarios';
 import {
@@ -19,8 +19,14 @@ import {
 } from 'recharts';
 
 export const MemoryScreen = () => {
-  const { userProfile, liveData, backendStatus } = useEmotion();
+  const { userProfile, liveData, backendStatus, memories, fetchMemories } = useEmotion();
   const cl = liveData?.continual_learning;
+
+  useEffect(() => {
+    if (fetchMemories) {
+      fetchMemories();
+    }
+  }, [fetchMemories]);
 
   const dailyAffectData = [
     { hour: '09:00', calm: 80, focus: 85, stress: 10 },
@@ -107,19 +113,19 @@ export const MemoryScreen = () => {
             <div className="space-y-3">
               <div>
                 <label className="text-[11px] font-mono text-zinc-500">Name</label>
-                <div className="text-sm font-semibold text-white mt-0.5">{userProfile.name}</div>
-                <div className="text-xs text-zinc-400">{userProfile.role} • {userProfile.institution}</div>
+                <div className="text-sm font-semibold text-white mt-0.5">{userProfile?.name || 'Dr. Alex Vance'}</div>
+                <div className="text-xs text-zinc-400">{userProfile?.role || 'Senior HRI Researcher'} • {userProfile?.institution || 'Human-Robot Interaction Lab'}</div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
                 <div className="bg-zinc-900/80 p-2.5 rounded-lg border border-white/[0.06]">
                   <span className="text-[10px] font-mono uppercase text-zinc-500">Preferred Style</span>
-                  <div className="text-xs font-medium text-zinc-200 mt-0.5">{userProfile.preferredStyle}</div>
+                  <div className="text-xs font-medium text-zinc-200 mt-0.5">{userProfile?.preferredStyle || 'Detailed & Proactive'}</div>
                 </div>
 
                 <div className="bg-zinc-900/80 p-2.5 rounded-lg border border-white/[0.06]">
                   <span className="text-[10px] font-mono uppercase text-zinc-500">Active Focus</span>
-                  <div className="text-xs font-medium text-zinc-200 mt-0.5 truncate">{userProfile.currentFocus}</div>
+                  <div className="text-xs font-medium text-zinc-200 mt-0.5 truncate">{userProfile?.currentFocus || 'Multimodal Fusion & Explainable Emotion AI'}</div>
                 </div>
               </div>
 
@@ -130,7 +136,7 @@ export const MemoryScreen = () => {
                   <span>Domain Ontology Tags</span>
                 </label>
                 <div className="flex flex-wrap gap-1.5">
-                  {userProfile.interests.map((tag, i) => (
+                  {(userProfile?.interests || ['Affective HRI', 'Multimodal Attention', 'Neuro-Symbolic XAI', 'PyTorch']).map((tag, i) => (
                     <span
                       key={i}
                       className="px-2 py-0.5 rounded-md text-xs font-mono bg-zinc-900 text-zinc-300 border border-white/[0.08]"
