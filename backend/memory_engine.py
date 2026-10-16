@@ -10,20 +10,116 @@ Maintains:
 import os
 import json
 import time
+import sqlite3
 from typing import List, Dict, Any, Optional
 
 
 DEFAULT_MEMORY_PATH = os.path.join(os.path.dirname(__file__), "data", "memory_store.json")
+DEFAULT_DB_PATH = os.path.join(os.path.dirname(__file__), "data", "memory.db")
 
 
 class MemoryEngine:
-    def __init__(self, storage_path: Optional[str] = None):
+    def __init__(self, storage_path: Optional[str] = None, db_path: Optional[str] = None):
         self.storage_path = storage_path or DEFAULT_MEMORY_PATH
+        if db_path:
+            self.db_path = db_path
+        elif storage_path is None:
+            self.db_path = DEFAULT_DB_PATH
+        else:
+            self.db_path = os.path.splitext(self.storage_path)[0] + ".db"
         self._ensure_storage()
 
+    def _init_sqlite(self):
+        """Initialize SQLite database tables for relational storage & querying."""
+        os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
+        conn = sqlite3.connect(self.db_path)
+        try:
+            cur = conn.cursor()
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS persons (
+                    id TEXT PRIMARY KEY,
+                    name TEXT,
+                    role TEXT,
+                    notes TEXT,
+                    first_seen TEXT,
+                    last_seen TEXT,
+                    session_count INTEGER,
+                    face_signature TEXT,
+                    last_emotion TEXT
+                )
+            """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS episodes (
+                    id TEXT PRIMARY KEY,
+                    timestamp TEXT,
+                    task TEXT,
+                    app TEXT,
+                    emotion TEXT,
+                    cli INTEGER,
+                    summary TEXT,
+                    intervention TEXT
+                )
+            """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS preferences (
+                    id TEXT PRIMARY KEY,
+                    title TEXT,
+                    category TEXT,
+                    confidence INTEGER,
+                    observed_count INTEGER,
+                    status TEXT
+                )
+            """)
+            conn.commit()
+        finally:
+            conn.close()
+
+    def _sync_to_sqlite(self, data: Dict[str, Any]):
+        """Persist in-memory state to SQLite relational tables."""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            try:
+                cur = conn.cursor()
+                for pid, p in data.get("persons", {}).items():
+                    sig_str = json.dumps(p.get("face_signature", []))
+                    cur.execute("""
+                        INSERT INTO persons (id, name, role, notes, first_seen, last_seen, session_count, face_signature, last_emotion)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        ON CONFLICT(id) DO UPDATE SET
+                            name=excluded.name,
+                            role=excluded.role,
+                            notes=excluded.notes,
+                            last_seen=excluded.last_seen,
+                            session_count=excluded.session_count,
+                            face_signature=excluded.face_signature,
+                            last_emotion=excluded.last_emotion
+                    """, (pid, p.get("name"), p.get("role"), p.get("notes"), p.get("first_seen"), p.get("last_seen"), p.get("session_count", 1), sig_str, p.get("last_emotion", "Neutral")))
+
+                for ep in data.get("episodes", []):
+                    cur.execute("""
+                        INSERT OR IGNORE INTO episodes (id, timestamp, task, app, emotion, cli, summary, intervention)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    """, (ep.get("id"), ep.get("timestamp"), ep.get("task"), ep.get("app"), ep.get("emotion"), ep.get("cli", 50), ep.get("summary"), ep.get("intervention")))
+
+                for pref in data.get("preferences", []):
+                    cur.execute("""
+                        INSERT INTO preferences (id, title, category, confidence, observed_count, status)
+                        VALUES (?, ?, ?, ?, ?, ?)
+                        ON CONFLICT(id) DO UPDATE SET
+                            confidence=excluded.confidence,
+                            observed_count=excluded.observed_count,
+                            status=excluded.status
+                    """, (pref.get("id"), pref.get("title"), pref.get("category"), pref.get("confidence", 80), pref.get("observed_count", 1), pref.get("status", "Active Policy")))
+                conn.commit()
+            finally:
+                conn.close()
+        except Exception:
+            pass
+
     def _ensure_storage(self):
-        """Ensure memory store JSON exists with baseline historical episodes."""
+        """Ensure memory store JSON exists with baseline historical episodes and init SQLite."""
         os.makedirs(os.path.dirname(self.storage_path), exist_ok=True)
+        self._init_sqlite()
         if not os.path.exists(self.storage_path):
             initial_data = {
                 "user_id": "DR_ALEX_VANCE",
@@ -88,6 +184,14 @@ class MemoryEngine:
             }
             with open(self.storage_path, "w", encoding="utf-8") as f:
                 json.dump(initial_data, f, indent=2)
+            self._sync_to_sqlite(initial_data)
+        else:
+            # Sync existing store to SQLite
+            try:
+                with open(self.storage_path, "r", encoding="utf-8") as f:
+                    self._sync_to_sqlite(json.load(f))
+            except Exception:
+                pass
 
     def load_data(self) -> Dict[str, Any]:
         """Load stored episodic memory and preferences."""
@@ -98,9 +202,10 @@ class MemoryEngine:
             return {"preferences": [], "episodes": []}
 
     def save_data(self, data: Dict[str, Any]):
-        """Save data back to storage."""
+        """Save data back to storage and sync with SQLite relational database."""
         with open(self.storage_path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)
+        self._sync_to_sqlite(data)
 
     def add_episode(self, task: str, app: str, emotion: str, cli: int, summary: str, intervention: str) -> Dict[str, Any]:
         """Record a new interaction episode into long-term memory."""
@@ -120,19 +225,46 @@ class MemoryEngine:
         return episode
 
     def query_memories(self, query: str, top_k: int = 3) -> List[Dict[str, Any]]:
-        """Retrieve relevant past episodes matching a query string (RAG context)."""
-        data = self.load_data()
-        episodes = data.get("episodes", [])
-        q_words = set(query.lower().split())
+        """
+        Retrieve relevant past episodes matching query string via SQLite relational query.
+        Falls back to keyword scoring if query does not match exact SQL pattern.
+        """
+        results = []
+        try:
+            conn = sqlite3.connect(self.db_path)
+            try:
+                conn.row_factory = sqlite3.Row
+                cur = conn.cursor()
+                tokens = [t.strip() for t in query.split() if len(t.strip()) > 2]
+                if tokens:
+                    conditions = " OR ".join(["summary LIKE ? OR task LIKE ? OR app LIKE ?" for _ in tokens])
+                    params = []
+                    for t in tokens:
+                        params.extend([f"%{t}%", f"%{t}%", f"%{t}%"])
+                    params.append(top_k)
+                    sql = f"SELECT id, timestamp, task, app, emotion, cli, summary, intervention FROM episodes WHERE {conditions} ORDER BY id DESC LIMIT ?"
+                    cur.execute(sql, params)
+                    rows = cur.fetchall()
+                    for r in rows:
+                        results.append(dict(r))
+            finally:
+                conn.close()
+        except Exception:
+            pass
 
-        scored = []
-        for ep in episodes:
-            text = f"{ep.get('task', '')} {ep.get('app', '')} {ep.get('emotion', '')} {ep.get('summary', '')}".lower()
-            score = sum(1 for w in q_words if w in text)
-            scored.append((score, ep))
+        if not results:
+            data = self.load_data()
+            episodes = data.get("episodes", [])
+            q_words = set(query.lower().split())
+            scored = []
+            for ep in episodes:
+                text = f"{ep.get('task', '')} {ep.get('app', '')} {ep.get('emotion', '')} {ep.get('summary', '')}".lower()
+                score = sum(1 for w in q_words if w in text)
+                scored.append((score, ep))
+            scored.sort(key=lambda x: x[0], reverse=True)
+            results = [item[1] for item in scored[:top_k]]
 
-        scored.sort(key=lambda x: x[0], reverse=True)
-        return [item[1] for item in scored[:top_k]]
+        return results
 
     def get_preferences(self) -> List[Dict[str, Any]]:
         """Get all active learned user preferences."""

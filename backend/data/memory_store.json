@@ -53,6 +53,26 @@
   ],
   "episodes": [
     {
+      "id": "ep_1792137245",
+      "timestamp": "2026-10-16 13:24:05",
+      "task": "Audit",
+      "app": "IDE",
+      "emotion": "Calm",
+      "cli": 35,
+      "summary": "Passed API tests",
+      "intervention": "None"
+    },
+    {
+      "id": "ep_1792137030",
+      "timestamp": "2026-10-16 13:20:30",
+      "task": "Test Execution",
+      "app": "PyTest",
+      "emotion": "Calm",
+      "cli": 30,
+      "summary": "Ran unit test suite successfully.",
+      "intervention": "Logged verification note"
+    },
+    {
       "id": "ep_1792136835",
       "timestamp": "2026-10-16 13:17:15",
       "task": "Audit",
