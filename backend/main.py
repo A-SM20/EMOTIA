@@ -23,6 +23,7 @@ import asyncio
 import json
 import time
 import threading
+import numpy as np
 from typing import Set, Dict, Any, Optional
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
@@ -121,7 +122,7 @@ def _pipeline_orchestrator():
 
         # Active person profile
         active_person = memory_engine.identify_or_register_person(None)
-        person_name = active_person.get("name", "Ananth")
+        person_name = active_person.get("name", "User 1")
 
         # 1. Vision Processing (MediaPipe FaceMesh + Action Units + 3D Pose)
         face_res, annotated_frame = face_detector.process_frame(frame, draw_overlay=True, person_name=person_name)

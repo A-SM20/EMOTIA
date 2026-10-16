@@ -29,19 +29,19 @@ export const MemoryScreen = () => {
   const [isEditing, setIsEditing] = useState(false);
   const activePerson = liveData?.person || memories?.persons?.[memories?.active_person_id || 'user_1'] || {
     id: 'user_1',
-    name: userProfile?.name || 'Ananth',
+    name: userProfile?.name || 'User 1',
     role: userProfile?.role || 'Lead Researcher',
     notes: 'Primary researcher. Working on EMOTIA HRI multimodal system. Prefers calm focus environment.',
     session_count: 14,
   };
 
-  const [editName, setEditName] = useState(activePerson.name || 'Ananth');
+  const [editName, setEditName] = useState(activePerson.name || 'User 1');
   const [editRole, setEditRole] = useState(activePerson.role || 'Lead Researcher');
   const [editNotes, setEditNotes] = useState(activePerson.notes || '');
 
   useEffect(() => {
     if (activePerson) {
-      setEditName(activePerson.name || 'Ananth');
+      setEditName(activePerson.name || 'User 1');
       setEditRole(activePerson.role || 'Lead Researcher');
       setEditNotes(activePerson.notes || '');
     }
@@ -103,7 +103,7 @@ export const MemoryScreen = () => {
               </span>
             )}
             <div className="flex items-center space-x-2 bg-zinc-900 border border-white/[0.08] px-2.5 py-1 rounded-lg text-xs font-mono text-zinc-400">
-              <span>Person: {activePerson.name || 'Ananth'} ({activePerson.id || 'user_1'})</span>
+              <span>Person: {activePerson.name || 'User 1'} ({activePerson.id || 'user_1'})</span>
             </div>
           </div>
         </div>
@@ -204,7 +204,7 @@ export const MemoryScreen = () => {
                 <div>
                   <label className="text-[11px] font-mono text-zinc-500">Name & Identification</label>
                   <div className="text-base font-bold text-white mt-0.5 flex items-center space-x-2">
-                    <span>{activePerson.name || 'Ananth'}</span>
+                    <span>{activePerson.name || 'User 1'}</span>
                     <span className="text-[10px] font-mono font-normal px-2 py-0.5 rounded bg-zinc-800 text-zinc-400">
                       ID: {activePerson.id || 'user_1'}
                     </span>
@@ -257,7 +257,7 @@ export const MemoryScreen = () => {
           </div>
 
           <div className="p-2.5 rounded-lg bg-zinc-900 border border-white/[0.08] text-[11px] text-zinc-400 font-mono flex items-center justify-between">
-            <span>Person Identified: <strong className="text-white">{activePerson.name || 'Ananth'}</strong></span>
+            <span>Person Identified: <strong className="text-white">{activePerson.name || 'User 1'}</strong></span>
             <span className="text-emerald-400">Memory Sync: Active</span>
           </div>
         </div>

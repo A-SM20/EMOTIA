@@ -144,19 +144,27 @@ class FaceDetector:
         eye_roi_gray = face_gray[int(fh * 0.18):int(fh * 0.55), :]
         eyes = self.eye_cascade.detectMultiScale(eye_roi_gray, scaleFactor=1.1, minNeighbors=3, minSize=(20, 20))
 
-        # Detect smile in lower half
-        mouth_roi_gray = face_gray[int(fh * 0.55):int(fh * 0.95), :]
-        smiles = self.smile_cascade.detectMultiScale(mouth_roi_gray, scaleFactor=1.2, minNeighbors=8, minSize=(25, 20))
+        # Detect smile in lower mouth region (exclude upper lip/mustache area above 0.64)
+        mouth_roi_gray = face_gray[int(fh * 0.64):int(fh * 0.94), :]
+        smiles = self.smile_cascade.detectMultiScale(
+            mouth_roi_gray,
+            scaleFactor=1.2,
+            minNeighbors=22, # Stricter neighbor threshold to filter mustache/lip shadows
+            minSize=(int(fw * 0.32), int(fh * 0.12))
+        )
 
         # Action Units computation
-        smile_detected = len(smiles) > 0
         eyes_detected = len(eyes) >= 2
 
-        # AU12 (Lip Corner Puller / Smile): measure smile geometry & presence
-        if smile_detected:
+        # AU12 (Lip Corner Puller / Smile): measure genuine smile geometry
+        if len(smiles) > 0:
             sx, sy, sw, sh = smiles[0]
             mouth_width_ratio = sw / max(1.0, fw)
-            au12 = round(float(np.clip(0.35 + 1.2 * (mouth_width_ratio - 0.25), 0.25, 0.95)), 3)
+            # Only trigger significant smile AU12 if mouth width expands noticeably (> 0.40 face width)
+            if mouth_width_ratio >= 0.40:
+                au12 = round(float(np.clip(0.35 + 1.8 * (mouth_width_ratio - 0.40), 0.35, 0.95)), 3)
+            else:
+                au12 = 0.08
         else:
             au12 = 0.05
 
@@ -352,9 +360,9 @@ class FaceDetector:
         is_relaxed = (au4 < 0.22) and (au12 < 0.25) and (au15 < 0.18)
 
         scores = {
-            "neutral": 0.65 if is_relaxed else 0.12,
-            "calm": 0.55 if is_relaxed else 0.10,
-            "happy": 0.05 + 1.25 * au12 if au12 > 0.28 else 0.04,
+            "neutral": 0.78 if is_relaxed else 0.15,
+            "calm": 0.68 if is_relaxed else 0.12,
+            "happy": 0.05 + 1.35 * au12 if au12 > 0.35 else 0.04,
             "frustrated": 0.05 + 1.15 * au4 + 0.35 * au15 if au4 > 0.35 else 0.05,
             "stressed": 0.05 + 0.60 * au4 + 0.60 * au7 if (au4 > 0.30 or au7 > 0.35) else 0.05,
         }
@@ -394,9 +402,9 @@ class FaceDetector:
             px, py = int(lm.x * w), int(lm.y * h)
             cv2.circle(img, (px, py), 1, (255, 255, 255), -1)
 
-        # Top HUD Banner: Person + Emotion + Confidence
-        label_text = f"{person_name.upper()} | {emotion.upper()} ({int(conf * 100)}%)"
-        tag_width = max(190, len(label_text) * 8 + 12)
+        # Top HUD Banner: Detected Emotion & Confidence (No person name above face)
+        label_text = f"AFFECT: {emotion.upper()} ({int(conf * 100)}%)"
+        tag_width = max(150, len(label_text) * 8 + 14)
         cv2.rectangle(img, (x1, max(0, y1 - 24)), (x1 + tag_width, y1), (20, 20, 24), -1)
         cv2.putText(img, label_text, (x1 + 6, y1 - 7), cv2.FONT_HERSHEY_SIMPLEX, 0.42, color, 1, cv2.LINE_AA)
 

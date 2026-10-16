@@ -41,7 +41,7 @@ export const DashboardScreen = () => {
     : (isLive && liveData?.context?.assistantSpeech)
       ? liveData.context.assistantSpeech
       : scenario.assistantMessage;
-  const activePersonName = liveData?.person?.name || 'Ananth';
+  const activePersonName = liveData?.person?.name || 'User';
   const activePersonRole = liveData?.person?.role || 'Lead Researcher';
 
   const handleSend = (e) => {

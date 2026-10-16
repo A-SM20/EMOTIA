@@ -1,15 +1,15 @@
 {
-  "user_id": "usr_ananth",
+  "user_id": "usr_default",
   "active_person_id": "user_1",
   "persons": {
     "user_1": {
       "id": "user_1",
-      "name": "Ananth",
+      "name": "User 1",
       "role": "Lead Researcher",
       "institution": "Affective Computing & Robotics Lab",
       "notes": "Expert HRI",
       "first_seen": "2026-10-15 08:00:00",
-      "last_seen": "2026-10-16 09:58:32",
+      "last_seen": "2026-10-16 15:41:08",
       "session_count": 14,
       "preferences": {
         "preferred_style": "Concise & Supportive",
@@ -52,6 +52,16 @@
     }
   ],
   "episodes": [
+    {
+      "id": "ep_1792146719",
+      "timestamp": "2026-10-16 16:01:59",
+      "task": "Test Execution",
+      "app": "PyTest",
+      "emotion": "Calm",
+      "cli": 30,
+      "summary": "Ran unit test suite successfully.",
+      "intervention": "Logged verification note"
+    },
     {
       "id": "ep_1792137245",
       "timestamp": "2026-10-16 13:24:05",

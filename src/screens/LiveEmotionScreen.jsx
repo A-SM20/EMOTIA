@@ -31,7 +31,7 @@ export const LiveEmotionScreen = () => {
   const activeValence = isLive && liveData.valence !== undefined ? Number(liveData.valence).toFixed(2) : scenario.valence;
   const activeArousal = isLive && liveData.arousal !== undefined ? Number(liveData.arousal).toFixed(2) : scenario.arousal;
   const activeLatency = isLive && liveData?.face?.latency_ms ? `${liveData.face.latency_ms}ms` : '11.2ms';
-  const activePersonName = liveData?.person?.name || 'Ananth';
+  const activePersonName = liveData?.person?.name || 'User';
 
   const facialConfidence = isLive && liveData?.face?.confidence != null ? Math.round(liveData.face.confidence * 100) : scenario.modalities.facial.confidence;
   const facialUnits = isLive && liveData?.face?.action_units ? [

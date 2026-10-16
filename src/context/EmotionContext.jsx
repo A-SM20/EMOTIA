@@ -276,7 +276,7 @@ export const EmotionProvider = ({ children }) => {
 
   // User Profile state
   const [userProfile, setUserProfile] = useState({
-    name: 'Ananth',
+    name: 'User 1',
     role: 'Lead Researcher',
     institution: 'Affective Computing & Robotics Lab',
     preferredStyle: 'Concise & Supportive',
