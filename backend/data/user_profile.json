@@ -1,13 +1,13 @@
 {
-  "user_id": "REVIEW1_VERIFY_USER",
-  "timestamp": 1792059551.8528972,
-  "calibration_samples": 1,
+  "user_id": "ID_ALEX_01",
+  "timestamp": 1792121518.6499724,
+  "calibration_samples": 0,
   "baseline_means": {
-    "AU4": 0.06791,
+    "AU4": 0.05,
     "AU12": 0.05,
-    "AU15": 0.06393,
-    "AU7": 0.050995000000000006,
-    "EAR": 0.29667669999999996
+    "AU15": 0.05,
+    "AU7": 0.05,
+    "EAR": 0.3
   },
   "anchor_baseline": {
     "AU4": 0.05,
@@ -24,5 +24,5 @@
     "neutral": -0.01
   },
   "plasticity_index": 0.85,
-  "stability_index": 0.986
+  "stability_index": 0.94
 }

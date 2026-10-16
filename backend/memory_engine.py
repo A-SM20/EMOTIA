@@ -13,9 +13,12 @@ import time
 from typing import List, Dict, Any, Optional
 
 
+DEFAULT_MEMORY_PATH = os.path.join(os.path.dirname(__file__), "data", "memory_store.json")
+
+
 class MemoryEngine:
-    def __init__(self, storage_path: str = "backend/data/memory_store.json"):
-        self.storage_path = storage_path
+    def __init__(self, storage_path: Optional[str] = None):
+        self.storage_path = storage_path or DEFAULT_MEMORY_PATH
         self._ensure_storage()
 
     def _ensure_storage(self):

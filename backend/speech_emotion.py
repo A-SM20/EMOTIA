@@ -5,6 +5,13 @@ Model: superb/wav2vec2-base-superb-er (speech emotion recognition, ~360MB downlo
 Falls back to energy-based heuristic if model unavailable.
 """
 
+import os
+# Force PyTorch and avoid TensorFlow/Keras 3 incompatibility with Transformers
+os.environ["USE_TF"] = "0"
+os.environ["USE_TORCH"] = "1"
+os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
+os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
+
 import threading
 import time
 import collections
@@ -79,9 +86,10 @@ class SpeechEmotionDetector:
             self._model = hf_pipeline(
                 "audio-classification",
                 model="superb/wav2vec2-base-superb-er",
+                framework="pt",
                 device=-1,    # CPU
             )
-            print("[speech_emotion] Model loaded ✓")
+            print("[speech_emotion] Model loaded [OK]")
         except Exception as e:
             print(f"[speech_emotion] Model load failed: {e}")
 

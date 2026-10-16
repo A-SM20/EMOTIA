@@ -13,6 +13,12 @@ Pipelines & Services:
   - Real-time WebSocket Telemetry & MJPEG Live Video Feed
 """
 
+import os
+os.environ["USE_TF"] = "0"
+os.environ["USE_TORCH"] = "1"
+os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
+os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
+
 import asyncio
 import json
 import time
