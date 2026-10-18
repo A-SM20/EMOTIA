@@ -25,7 +25,7 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
       label: 'Live Emotion',
       subtitle: 'Multimodal Monitor',
       icon: Activity,
-      badge: `${scenario.confidence}%`,
+      badge: scenario?.confidence != null ? `${scenario.confidence}%` : '85%',
     },
     {
       id: 'memory',

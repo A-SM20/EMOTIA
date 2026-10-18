@@ -23,45 +23,126 @@ import {
 } from 'recharts';
 
 export const LiveEmotionScreen = () => {
-  const { scenario, emotionHistory, liveData, backendStatus } = useEmotion();
+  const context = useEmotion() || {};
+  const {
+    scenario = {},
+    emotionHistory = [],
+    liveData = null,
+    backendStatus = 'offline',
+  } = context;
 
   const isLive = backendStatus === 'connected' && !!liveData;
-  const activeLabel = isLive && liveData.emotion ? (liveData.emotion.charAt(0).toUpperCase() + liveData.emotion.slice(1)) : scenario.label;
-  const activeConfidence = isLive && liveData.confidence != null ? Math.round(liveData.confidence * 100) : scenario.confidence;
-  const activeValence = isLive && liveData.valence !== undefined ? Number(liveData.valence).toFixed(2) : scenario.valence;
-  const activeArousal = isLive && liveData.arousal !== undefined ? Number(liveData.arousal).toFixed(2) : scenario.arousal;
-  const activeLatency = isLive && liveData?.face?.latency_ms ? `${liveData.face.latency_ms}ms` : '11.2ms';
+
+  // Active Affect Label
+  const activeLabel = isLive && typeof liveData?.emotion === 'string' && liveData.emotion.length > 0
+    ? (liveData.emotion.charAt(0).toUpperCase() + liveData.emotion.slice(1))
+    : (scenario?.label || 'Neutral');
+
+  // Active Confidence Percentage
+  const activeConfidence = isLive && typeof liveData?.confidence === 'number' && !isNaN(liveData.confidence)
+    ? Math.round(liveData.confidence * 100)
+    : (scenario?.confidence ?? 85);
+
+  // Active Valence & Arousal with strict numeric formatting
+  const activeValenceNum = isLive && liveData?.valence != null && !isNaN(Number(liveData.valence))
+    ? Number(liveData.valence)
+    : (scenario?.valence != null && !isNaN(Number(scenario.valence)) ? Number(scenario.valence) : 0.05);
+
+  const activeArousalNum = isLive && liveData?.arousal != null && !isNaN(Number(liveData.arousal))
+    ? Number(liveData.arousal)
+    : (scenario?.arousal != null && !isNaN(Number(scenario.arousal)) ? Number(scenario.arousal) : 0.10);
+
+  const activeValence = activeValenceNum.toFixed(2);
+  const activeArousal = activeArousalNum.toFixed(2);
+
+  const activeLatency = isLive && liveData?.face?.latency_ms != null
+    ? `${Number(liveData.face.latency_ms).toFixed(1)}ms`
+    : '11.2ms';
   const activePersonName = liveData?.person?.name || 'User';
 
-  const facialConfidence = isLive && liveData?.face?.confidence != null ? Math.round(liveData.face.confidence * 100) : scenario.modalities.facial.confidence;
-  const facialUnits = isLive && liveData?.face?.action_units ? [
-    `AU4 (Brow Lowerer: ${(liveData.face.action_units.AU4 || 0).toFixed(2)})`,
-    `AU12 (Lip Corner Puller: ${(liveData.face.action_units.AU12 || 0).toFixed(2)})`,
-    `AU15 (Lip Corner Depressor: ${(liveData.face.action_units.AU15 || 0).toFixed(2)})`,
-  ] : scenario.modalities.facial.detectedUnits;
+  // Modality 1: Facial Vision
+  const facialConfidence = isLive && typeof liveData?.face?.confidence === 'number' && !isNaN(liveData.face.confidence)
+    ? Math.round(liveData.face.confidence * 100)
+    : (scenario?.modalities?.facial?.confidence ?? 85);
 
-  const vocalConfidence = isLive && liveData?.speech?.confidence != null ? Math.round(liveData.speech.confidence * 100) : scenario.modalities.vocal.confidence;
-  const vocalUnits = isLive ? (liveData?.speech?.active ? [
-    'Signal: Voice Activity Detected',
-    `Energy: ${(liveData.speech.energy || 0).toFixed(3)}`,
-    `Acoustic Affect: ${liveData.speech.emotion || 'neutral'}`
-  ] : [
-    'Signal: Silent / Ambient Desk',
-    'Acoustic Front-End: Wav2Vec2.0 Ready',
-    'Voice Activity: Listening'
-  ]) : scenario.modalities.vocal.detectedUnits;
+  const rawAU = liveData?.face?.action_units;
+  const facialUnits = isLive && rawAU && typeof rawAU === 'object'
+    ? [
+        `AU4 (Brow Lowerer: ${Number(rawAU.AU4 || 0).toFixed(2)})`,
+        `AU12 (Lip Corner Puller: ${Number(rawAU.AU12 || 0).toFixed(2)})`,
+        `AU15 (Lip Corner Depressor: ${Number(rawAU.AU15 || 0).toFixed(2)})`,
+      ]
+    : (Array.isArray(scenario?.modalities?.facial?.detectedUnits) && scenario.modalities.facial.detectedUnits.length > 0
+        ? scenario.modalities.facial.detectedUnits
+        : ['AU4 (Brow Lowerer: 0.12)', 'AU12 (Lip Corner Puller: 0.15)', 'AU15 (Lip Corner Depressor: 0.08)']);
 
+  // Modality 2: Acoustic Speech
+  const vocalConfidence = isLive && typeof liveData?.speech?.confidence === 'number' && !isNaN(liveData.speech.confidence)
+    ? Math.round(liveData.speech.confidence * 100)
+    : (scenario?.modalities?.vocal?.confidence ?? 80);
+
+  const vocalUnits = isLive
+    ? (liveData?.speech?.active
+        ? [
+            'Signal: Voice Activity Detected',
+            `Energy: ${Number(liveData?.speech?.energy || 0).toFixed(3)}`,
+            `Acoustic Affect: ${liveData?.speech?.emotion || 'neutral'}`
+          ]
+        : [
+            'Signal: Silent / Ambient Desk',
+            'Acoustic Front-End: Wav2Vec2.0 Ready',
+            'Voice Activity: Listening'
+          ])
+    : (Array.isArray(scenario?.modalities?.vocal?.detectedUnits) && scenario.modalities.vocal.detectedUnits.length > 0
+        ? scenario.modalities.vocal.detectedUnits
+        : ['Signal: Silent / Ambient Desk', 'Acoustic Front-End: Wav2Vec2.0 Ready', 'Voice Activity: Listening']);
+
+  // Modality 3: Multimodal Fused
   const fusedConfidence = activeConfidence;
-  const fusedUnits = isLive && liveData?.xai ? [
-    `Attention Weight Vision: ${Math.round((liveData.xai.vision_weight || 0.48) * 100)}%`,
-    `Attention Weight Audio: ${Math.round((liveData.xai.speech_weight || 0.32) * 100)}%`,
-    `Attention Weight Context: ${Math.round((liveData.xai.context_weight || 0.20) * 100)}%`,
-  ] : scenario.modalities.fused.detectedUnits;
+  const xaiWeights = liveData?.xai?.featureAttributionWeights;
+  const fusedUnits = isLive && liveData?.xai
+    ? [
+        `Attention Weight Vision: ${xaiWeights?.vision ?? Math.round((liveData.xai.vision_weight || 0.48) * 100)}%`,
+        `Attention Weight Audio: ${xaiWeights?.audio ?? Math.round((liveData.xai.speech_weight || 0.32) * 100)}%`,
+        `Attention Weight Context: ${xaiWeights?.context ?? Math.round((liveData.xai.context_weight || 0.20) * 100)}%`,
+      ]
+    : (Array.isArray(scenario?.modalities?.fused?.detectedUnits) && scenario.modalities.fused.detectedUnits.length > 0
+        ? scenario.modalities.fused.detectedUnits
+        : ['Attention Weight Vision: 48%', 'Attention Weight Audio: 32%', 'Attention Weight Context: 20%']);
 
-  const emotionDist = isLive && liveData?.face?.probabilities ? Object.entries(liveData.face.probabilities).map(([name, prob]) => ({
-    name: name.charAt(0).toUpperCase() + name.slice(1),
-    percentage: Math.round(prob * 100)
-  })).sort((a, b) => b.percentage - a.percentage) : scenario.emotionDistribution;
+  // Softmax Emotion Distribution
+  const rawProbs = liveData?.face?.probabilities;
+  const emotionDist = isLive && rawProbs && typeof rawProbs === 'object' && Object.keys(rawProbs).length > 0
+    ? Object.entries(rawProbs).map(([name, prob]) => ({
+        name: typeof name === 'string' ? (name.charAt(0).toUpperCase() + name.slice(1)) : String(name),
+        percentage: typeof prob === 'number' && !isNaN(prob) ? Math.round(prob * 100) : 0
+      })).sort((a, b) => b.percentage - a.percentage)
+    : (Array.isArray(scenario?.emotionDistribution) && scenario.emotionDistribution.length > 0
+        ? scenario.emotionDistribution
+        : [
+            { name: 'Neutral', percentage: 70 },
+            { name: 'Calm', percentage: 15 },
+            { name: 'Frustrated', percentage: 5 },
+            { name: 'Stressed', percentage: 5 },
+            { name: 'Happy', percentage: 5 }
+          ]);
+
+  const safeEmotionDist = Array.isArray(emotionDist) ? emotionDist : [];
+
+  // Sanitized History Data for Recharts AreaChart
+  const safeEmotionHistory = Array.isArray(emotionHistory) && emotionHistory.length > 0
+    ? emotionHistory.map((item, idx) => ({
+        time: item?.time || `T-${idx}`,
+        intensity: typeof item?.intensity === 'number' && !isNaN(item.intensity)
+          ? Math.max(0, Math.min(100, item.intensity))
+          : (typeof item?.confidence === 'number' && !isNaN(item.confidence) ? item.confidence : 50),
+        confidence: typeof item?.confidence === 'number' && !isNaN(item.confidence) ? item.confidence : 50,
+        emotion: item?.emotion || 'Neutral',
+      }))
+    : [
+        { time: '12:00:00', intensity: 50, confidence: 50, emotion: 'Neutral' },
+        { time: '12:01:00', intensity: 65, confidence: 65, emotion: 'Calm' }
+      ];
 
   return (
     <div className="space-y-5 animate-fadeIn">
@@ -74,13 +155,13 @@ export const LiveEmotionScreen = () => {
           {/* Main Emotion Display (5 Cols) */}
           <div className="lg:col-span-5 flex items-center space-x-4">
             <div className="text-6xl">
-              {scenario.emoji}
+              {scenario?.emoji || '😐'}
             </div>
             <div className="space-y-1">
               <div className="text-[10px] font-mono uppercase tracking-wider text-zinc-500 font-medium flex items-center space-x-2">
                 <span>Fused Affect Prediction {isLive && '• LIVE TELEMETRY'}</span>
                 {isLive && (
-                  <span className="px-1.5 py-0.2 rounded bg-zinc-800 text-emerald-400 border border-emerald-500/30 text-[9px]">
+                  <span className="px-1.5 py-0.5 rounded bg-zinc-800 text-emerald-400 border border-emerald-500/30 text-[9px]">
                     👤 {activePersonName}
                   </span>
                 )}
@@ -106,8 +187,8 @@ export const LiveEmotionScreen = () => {
                 <Compass className="w-3 h-3 text-zinc-400" />
                 <span>Task Context</span>
               </div>
-              <div className="text-xs font-medium text-white truncate">{scenario.taskContext}</div>
-              <div className="text-[10px] text-zinc-500 truncate">{scenario.activeApp}</div>
+              <div className="text-xs font-medium text-white truncate">{scenario?.taskContext || 'General Task'}</div>
+              <div className="text-[10px] text-zinc-500 truncate">{scenario?.activeApp || 'System'}</div>
             </div>
 
             <div className="bg-zinc-900/80 p-3 rounded-lg border border-white/[0.06]">
@@ -116,10 +197,10 @@ export const LiveEmotionScreen = () => {
                 <span>Affect Valence</span>
               </div>
               <div className="text-base font-semibold font-mono text-zinc-100">
-                {activeValence > 0 ? `+${activeValence}` : activeValence}
+                {activeValenceNum > 0 ? `+${activeValence}` : activeValence}
               </div>
               <div className="text-[10px] text-zinc-500 font-mono">
-                {activeValence >= 0.3 ? 'Positive' : activeValence <= -0.3 ? 'Negative' : 'Equilibrium'}
+                {activeValenceNum >= 0.3 ? 'Positive' : activeValenceNum <= -0.3 ? 'Negative' : 'Equilibrium'}
               </div>
             </div>
 
@@ -129,10 +210,10 @@ export const LiveEmotionScreen = () => {
                 <span>Arousal Level</span>
               </div>
               <div className="text-base font-semibold font-mono text-zinc-100">
-                {activeArousal > 0 ? `+${activeArousal}` : activeArousal}
+                {activeArousalNum > 0 ? `+${activeArousal}` : activeArousal}
               </div>
               <div className="text-[10px] text-zinc-500 font-mono">
-                {activeArousal >= 0.4 ? 'High Activation' : activeArousal <= -0.2 ? 'Relaxed' : 'Moderate'}
+                {activeArousalNum >= 0.4 ? 'High Activation' : activeArousalNum <= -0.2 ? 'Relaxed' : 'Moderate'}
               </div>
             </div>
           </div>
@@ -174,14 +255,14 @@ export const LiveEmotionScreen = () => {
             <div className="h-1 w-full bg-zinc-900 rounded-full overflow-hidden">
               <div
                 className="h-full bg-white rounded-full transition-all duration-500"
-                style={{ width: `${facialConfidence}%` }}
+                style={{ width: `${Math.min(100, Math.max(0, facialConfidence))}%` }}
               ></div>
             </div>
 
             <div className="space-y-1.5 pt-1">
               <div className="text-[10px] font-mono uppercase text-zinc-500">Action Units (AU):</div>
               <div className="space-y-1">
-                {facialUnits.map((au, i) => (
+                {(Array.isArray(facialUnits) ? facialUnits : []).map((au, i) => (
                   <div key={i} className="text-xs font-mono bg-zinc-900 px-2 py-1 rounded text-zinc-300 border border-white/[0.06]">
                     {au}
                   </div>
@@ -210,14 +291,14 @@ export const LiveEmotionScreen = () => {
             <div className="h-1 w-full bg-zinc-900 rounded-full overflow-hidden">
               <div
                 className="h-full bg-white rounded-full transition-all duration-500"
-                style={{ width: `${vocalConfidence}%` }}
+                style={{ width: `${Math.min(100, Math.max(0, vocalConfidence))}%` }}
               ></div>
             </div>
 
             <div className="space-y-1.5 pt-1">
               <div className="text-[10px] font-mono uppercase text-zinc-500">Prosody Vectors:</div>
               <div className="space-y-1">
-                {vocalUnits.map((feat, i) => (
+                {(Array.isArray(vocalUnits) ? vocalUnits : []).map((feat, i) => (
                   <div key={i} className="text-xs font-mono bg-zinc-900 px-2 py-1 rounded text-zinc-300 border border-white/[0.06]">
                     {feat}
                   </div>
@@ -246,14 +327,14 @@ export const LiveEmotionScreen = () => {
             <div className="h-1 w-full bg-zinc-900 rounded-full overflow-hidden">
               <div
                 className="h-full bg-white rounded-full transition-all duration-500"
-                style={{ width: `${fusedConfidence}%` }}
+                style={{ width: `${Math.min(100, Math.max(0, fusedConfidence))}%` }}
               ></div>
             </div>
 
             <div className="space-y-1.5 pt-1">
               <div className="text-[10px] font-mono uppercase text-zinc-500">Attention Layer:</div>
               <div className="space-y-1">
-                {fusedUnits.map((weight, i) => (
+                {(Array.isArray(fusedUnits) ? fusedUnits : []).map((weight, i) => (
                   <div key={i} className="text-xs font-mono bg-zinc-900 px-2 py-1 rounded text-zinc-200 border border-white/[0.06]">
                     {weight}
                   </div>
@@ -279,18 +360,18 @@ export const LiveEmotionScreen = () => {
           </div>
 
           <div className="space-y-2.5">
-            {emotionDist.map((item) => (
-              <div key={item.name} className="space-y-1">
+            {safeEmotionDist.map((item, idx) => (
+              <div key={item?.name || idx} className="space-y-1">
                 <div className="flex items-center justify-between text-xs font-mono">
-                  <span className="text-zinc-300">{item.name}</span>
-                  <span className="text-zinc-400 font-medium">{item.percentage}%</span>
+                  <span className="text-zinc-300">{item?.name || 'Unknown'}</span>
+                  <span className="text-zinc-400 font-medium">{item?.percentage ?? 0}%</span>
                 </div>
                 <div className="h-1.5 w-full bg-zinc-900 rounded-full overflow-hidden border border-white/[0.06]">
                   <div
                     className="h-full rounded-full transition-all duration-500"
                     style={{
-                      width: `${item.percentage}%`,
-                      backgroundColor: item.percentage > 50 ? '#ffffff' : '#71717a',
+                      width: `${Math.min(100, Math.max(0, item?.percentage ?? 0))}%`,
+                      backgroundColor: (item?.percentage ?? 0) > 50 ? '#ffffff' : '#71717a',
                     }}
                   ></div>
                 </div>
@@ -318,9 +399,9 @@ export const LiveEmotionScreen = () => {
           </div>
 
           {/* Recharts Area Chart */}
-          <div className="h-52 w-full pt-2">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={emotionHistory} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+          <div className="h-52 w-full pt-2 min-h-[200px]">
+            <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={180}>
+              <AreaChart data={safeEmotionHistory} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="intensityMonochrome" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#ffffff" stopOpacity={0.25} />

@@ -70,13 +70,15 @@ export const EmotionProvider = ({ children }) => {
           // Push live point into emotion history
           const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
           setEmotionHistory(prev => {
+            const rawConf = typeof data?.confidence === 'number' && !isNaN(data.confidence) ? data.confidence : 0.5;
+            const emotionKeyStr = typeof emotionKey === 'string' && emotionKey.length > 0 ? emotionKey : 'neutral';
             const updated = [...prev, {
               time: nowTime,
-              intensity: Math.round(data.confidence * 100),
-              confidence: Math.round(data.confidence * 100),
-              valence: data.valence,
-              arousal: data.arousal,
-              emotion: emotionKey.charAt(0).toUpperCase() + emotionKey.slice(1),
+              intensity: Math.round(rawConf * 100),
+              confidence: Math.round(rawConf * 100),
+              valence: typeof data?.valence === 'number' ? data.valence : 0.05,
+              arousal: typeof data?.arousal === 'number' ? data.arousal : 0.05,
+              emotion: emotionKeyStr.charAt(0).toUpperCase() + emotionKeyStr.slice(1),
             }];
             return updated.slice(-15);
           });

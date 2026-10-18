@@ -19,8 +19,9 @@ export const QuickScenarioBar = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
         {/* Left: Segmented Scenario Pills */}
         <div className="flex flex-wrap items-center gap-1.5">
-          {scenarioKeys.map((key) => {
-            const sc = allScenarios[key];
+          {(scenarioKeys || []).map((key) => {
+            const sc = allScenarios?.[key];
+            if (!sc) return null;
             const isActive = currentScenarioKey === key;
 
             return (
@@ -33,9 +34,9 @@ export const QuickScenarioBar = () => {
                     : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900 border border-transparent'
                 }`}
               >
-                <span>{sc.emoji}</span>
-                <span>{sc.label}</span>
-                <span className="text-[10px] text-zinc-500 font-mono">({sc.confidence}%)</span>
+                <span>{sc.emoji || '•'}</span>
+                <span>{sc.label || key}</span>
+                <span className="text-[10px] text-zinc-500 font-mono">({sc.confidence ?? 80}%)</span>
               </button>
             );
           })}

@@ -9,8 +9,10 @@ import { MemoryScreen } from './screens/MemoryScreen';
 import { ConversationsScreen } from './screens/ConversationsScreen';
 import { InsightsScreen } from './screens/InsightsScreen';
 
+import { ErrorBoundary } from './components/ErrorBoundary';
+
 const AppContent = () => {
-  const { activeScreen } = useEmotion();
+  const { activeScreen, setActiveScreen } = useEmotion();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   const renderScreen = () => {
@@ -43,7 +45,12 @@ const AppContent = () => {
         {/* Dynamic Page Content Viewport */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-5 lg:p-6 modern-grid">
           <div className="max-w-6xl mx-auto">
-            {renderScreen()}
+            <ErrorBoundary
+              key={activeScreen}
+              onNavigateDashboard={() => setActiveScreen('dashboard')}
+            >
+              {renderScreen()}
+            </ErrorBoundary>
           </div>
         </main>
       </div>
