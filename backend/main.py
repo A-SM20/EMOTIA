@@ -14,6 +14,12 @@ Pipelines & Services:
 """
 
 import os
+import sys
+
+_BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
+if _BACKEND_DIR not in sys.path:
+    sys.path.insert(0, _BACKEND_DIR)
+
 os.environ["USE_TF"] = "0"
 os.environ["USE_TORCH"] = "1"
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
@@ -528,3 +534,9 @@ async def websocket_endpoint(ws: WebSocket):
         print(f"[ws] Error: {e}")
         if len(_clients) == 0:
             _auto_pause_task = asyncio.create_task(_delayed_auto_pause(12.0))
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+
