@@ -49,7 +49,7 @@ export const CameraHUD = () => {
   };
 
   const t = frameTime;
-  const mood = scenario.id;
+  const mood = scenario?.id || 'neutral';
 
   // -------------------------------------------------------------
   // Mood-Driven Dynamic Physics & Landmark Calculations
@@ -318,7 +318,7 @@ export const CameraHUD = () => {
                   </span>
                 )}
                 <span className="text-zinc-400">Target:</span>
-                <span className="text-white font-bold uppercase">{liveData?.emotion || scenario.label} ({Math.round((liveData?.confidence || 0.85) * 100)}%)</span>
+                <span className="text-white font-bold uppercase">{liveData?.emotion || scenario?.label || 'Neutral'} ({Math.round((liveData?.confidence || 0.85) * 100)}%)</span>
               </div>
 
               {/* Bottom HUD: Real-time Action Units */}
@@ -354,7 +354,7 @@ export const CameraHUD = () => {
                   {/* Top Label Tag */}
                   <div className="absolute -top-2.5 left-2.5 bg-zinc-900 px-2 py-0.2 rounded text-[10px] font-mono border border-white/[0.08] text-zinc-200 flex items-center space-x-1">
                     <span>Tracked:</span>
-                    <span className="text-white font-medium">{scenario.label} ({scenario.confidence}%)</span>
+                    <span className="text-white font-medium">{scenario?.label || 'Neutral'} ({scenario?.confidence || 85}%)</span>
                   </div>
                 </div>
 
@@ -478,7 +478,7 @@ export const CameraHUD = () => {
 
               {/* Bottom HUD info overlay: Gaze tracking */}
               <div className="absolute bottom-3 left-3 bg-zinc-900/90 backdrop-blur-md px-2.5 py-1 rounded-md border border-white/[0.08] text-[10px] font-mono text-zinc-400">
-                <span>Gaze: {scenario.modalities.facial.metric}</span>
+                <span>Gaze: {scenario?.modalities?.facial?.metric || 'Direct (92%)'}</span>
               </div>
             </div>
           )

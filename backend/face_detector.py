@@ -84,7 +84,7 @@ class FaceDetector:
             "latency_ms": 0.0,
         }
 
-    def process_frame(self, frame_bgr: np.ndarray, draw_overlay: bool = True, person_name: str = "Ananth") -> Tuple[Dict, np.ndarray]:
+    def process_frame(self, frame_bgr: np.ndarray, draw_overlay: bool = True, person_name: str = "User") -> Tuple[Dict, np.ndarray]:
         """
         Processes a BGR frame, extracts facial telemetry, and optionally draws a futuristic HUD.
         Returns: (result_dict, annotated_frame_bgr)
@@ -374,7 +374,7 @@ class FaceDetector:
         return {k: round(float(v / total_exp), 3) for k, v in exp_scores.items()}
 
     def _draw_hud(self, img: np.ndarray, bbox: List[int], ncx: float, ncy: float,
-                  au: Dict, pose: Dict, emotion: str, conf: float, landmarks, person_name: str = "Ananth"):
+                  au: Dict, pose: Dict, emotion: str, conf: float, landmarks, person_name: str = "User"):
         """Render futuristic sci-fi HUD telemetry directly onto video frame."""
         x1, y1, x2, y2 = bbox
         h, w = img.shape[:2]

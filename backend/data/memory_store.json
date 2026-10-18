@@ -4,7 +4,7 @@
   "persons": {
     "user_1": {
       "id": "user_1",
-      "name": "User 1",
+      "name": "Lead Researcher",
       "role": "Lead Researcher",
       "institution": "Affective Computing & Robotics Lab",
       "notes": "Expert HRI",
@@ -52,6 +52,26 @@
     }
   ],
   "episodes": [
+    {
+      "id": "ep_1792313770",
+      "timestamp": "2026-10-18 14:26:10",
+      "task": "Verification",
+      "app": "Test",
+      "emotion": "Calm",
+      "cli": 25,
+      "summary": "E2E verification pass",
+      "intervention": "Logged note"
+    },
+    {
+      "id": "ep_1792313707",
+      "timestamp": "2026-10-18 14:25:07",
+      "task": "Test Execution",
+      "app": "PyTest",
+      "emotion": "Calm",
+      "cli": 30,
+      "summary": "Ran unit test suite successfully.",
+      "intervention": "Logged verification note"
+    },
     {
       "id": "ep_1792147191",
       "timestamp": "2026-10-16 16:09:51",

@@ -284,7 +284,7 @@ class MemoryEngine:
             # Seed primary researcher profile
             primary = {
                 "id": "user_1",
-                "name": "Ananth",
+                "name": "User 1",
                 "role": "Lead Researcher",
                 "notes": "Primary researcher. Working on EMOTIA HRI system.",
                 "first_seen": now_str,

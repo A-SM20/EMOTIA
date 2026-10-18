@@ -6,6 +6,11 @@ Falls back to energy-based heuristic if model unavailable.
 """
 
 import os
+import warnings
+# Suppress noisy deprecation warnings from HuggingFace Wav2Vec2 checkpoint
+warnings.filterwarnings("ignore", category=UserWarning)
+warnings.filterwarnings("ignore", message=".*gradient_checkpointing.*")
+
 # Force PyTorch and avoid TensorFlow/Keras 3 incompatibility with Transformers
 os.environ["USE_TF"] = "0"
 os.environ["USE_TORCH"] = "1"

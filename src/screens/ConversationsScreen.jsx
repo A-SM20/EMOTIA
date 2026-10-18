@@ -9,13 +9,17 @@ import {
 } from 'lucide-react';
 
 export const ConversationsScreen = () => {
+  const context = useEmotion() || {};
   const {
-    conversations,
+    conversations = [],
     sendMessage,
-    scenario,
+    scenario = {},
     speakAssistantMessage,
-  } = useEmotion();
+    userProfile,
+    liveData,
+  } = context;
 
+  const activePersonName = liveData?.person?.name || userProfile?.name || 'User';
   const [inputVal, setInputVal] = useState('');
 
   const handleSend = (e) => {
@@ -45,7 +49,7 @@ export const ConversationsScreen = () => {
           </div>
 
           <div className="flex items-center space-x-2 text-xs font-mono text-zinc-400 bg-zinc-900 border border-white/[0.08] px-2.5 py-1 rounded-lg self-start sm:self-auto">
-            <span>{conversations.length} Messages</span>
+            <span>{(conversations || []).length} Messages</span>
           </div>
         </div>
       </div>
@@ -53,27 +57,27 @@ export const ConversationsScreen = () => {
       {/* Transcript Chat Stream */}
       <div className="bg-[#121215] rounded-xl border border-white/[0.08] p-5 shadow-card space-y-4 min-h-[480px] flex flex-col justify-between">
         <div className="space-y-4 overflow-y-auto max-h-[560px] pr-2">
-          {conversations.map((msg) => {
-            const isUser = msg.sender === 'user';
+          {(conversations || []).map((msg) => {
+            const isUser = msg?.sender === 'user';
 
             return (
               <div
-                key={msg.id}
+                key={msg?.id || Math.random()}
                 className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} space-y-1.5`}
               >
                 {/* Sender Header */}
                 <div className="flex items-center space-x-2 text-[11px] font-mono text-zinc-500 px-1">
                   {isUser ? (
                     <>
-                      <span>Dr. Alex Vance</span>
+                      <span>{activePersonName}</span>
                       <span>•</span>
-                      <span>{msg.time}</span>
+                      <span>{msg?.time || ''}</span>
                     </>
                   ) : (
                     <>
                       <span className="font-semibold text-zinc-300">EMOTIA</span>
                       <span>•</span>
-                      <span>{msg.time}</span>
+                      <span>{msg?.time || ''}</span>
                     </>
                   )}
                 </div>
@@ -86,12 +90,12 @@ export const ConversationsScreen = () => {
                       : 'bg-zinc-900 text-zinc-200 border border-white/[0.06] rounded-tl-sm shadow-sm'
                   }`}
                 >
-                  <p className="font-sans whitespace-pre-wrap">{msg.text}</p>
+                  <p className="font-sans whitespace-pre-wrap">{msg?.text || ''}</p>
 
                   {!isUser && (
                     <div className="mt-2 pt-2 border-t border-white/[0.08] flex items-center justify-between">
                       <button
-                        onClick={() => speakAssistantMessage(msg.text)}
+                        onClick={() => speakAssistantMessage && speakAssistantMessage(msg?.text)}
                         className="text-[10px] font-mono text-zinc-400 hover:text-white flex items-center space-x-1 transition-colors"
                         title="Speak this response"
                       >
@@ -105,7 +109,7 @@ export const ConversationsScreen = () => {
 
                 {/* Metadata Chips Tagging */}
                 <div className="flex flex-wrap items-center gap-1.5 px-1 pt-0.5">
-                  {isUser && msg.emotionTag && (
+                  {isUser && msg?.emotionTag && (
                     <div className="flex items-center space-x-1 bg-zinc-900 border border-white/[0.08] px-2 py-0.5 rounded-md text-[10px] font-mono text-zinc-300">
                       <span className="text-zinc-500">Detected:</span>
                       <span className="font-medium text-white">
@@ -114,12 +118,12 @@ export const ConversationsScreen = () => {
                     </div>
                   )}
 
-                  {!isUser && msg.contextTag && (
+                  {!isUser && msg?.contextTag && (
                     <div className="flex items-center space-x-1.5 bg-zinc-900 border border-white/[0.08] px-2 py-0.5 rounded-md text-[10px] font-mono text-zinc-400">
                       <Compass className="w-3 h-3 text-zinc-400" />
-                      <span>{msg.contextTag.task}</span>
+                      <span>{msg.contextTag.task || 'General'}</span>
                       <span className="text-zinc-600">/</span>
-                      <span className="text-zinc-300">{msg.contextTag.emotionState}</span>
+                      <span className="text-zinc-300">{msg.contextTag.emotionState || 'Neutral'}</span>
                     </div>
                   )}
                 </div>
@@ -154,7 +158,7 @@ export const ConversationsScreen = () => {
           </div>
 
           <div className="flex items-center justify-between text-[11px] font-mono text-zinc-500 px-0.5">
-            <span>Prior State: {scenario.label} ({scenario.confidence}%)</span>
+            <span>Prior State: {scenario?.label || 'Neutral'} ({scenario?.confidence || 85}%)</span>
             <span>Real-time Evaluation</span>
           </div>
         </form>

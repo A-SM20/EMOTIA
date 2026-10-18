@@ -168,7 +168,7 @@ export const MemoryScreen = () => {
                     value={editName}
                     onChange={(e) => setEditName(e.target.value)}
                     className="w-full bg-zinc-900 border border-white/[0.12] rounded px-2.5 py-1.5 text-xs text-white mt-1 focus:outline-none focus:border-white/30"
-                    placeholder="e.g. Ananth"
+                    placeholder="e.g. Alex Vance"
                   />
                 </div>
                 <div>

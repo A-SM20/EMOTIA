@@ -421,14 +421,18 @@ export const EmotionProvider = ({ children }) => {
     if (!userText.trim()) return;
 
     const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    const currentScen = SCENARIOS[currentScenarioKey];
+    const currentScen = SCENARIOS[currentScenarioKey] || SCENARIOS.frustrated || {};
 
     const newUserMsg = {
       id: Date.now(),
       sender: 'user',
       text: userText,
       time: nowTime,
-      emotionTag: { label: currentScen.label, confidence: currentScen.confidence, color: currentScen.color },
+      emotionTag: {
+        label: currentScen.label || 'Neutral',
+        confidence: currentScen.confidence || 85,
+        color: currentScen.color || 'blue'
+      },
       modality: micActive ? 'Voice + Screen' : 'Text Query',
     };
 

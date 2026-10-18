@@ -32,15 +32,15 @@ export const DashboardScreen = () => {
   const [inputPrompt, setInputPrompt] = useState('');
 
   const isLive = backendStatus === 'connected' && !!liveData;
-  const activeEmotion = isLive && liveData.emotion ? (liveData.emotion.charAt(0).toUpperCase() + liveData.emotion.slice(1)) : scenario.label;
-  const activeConfidence = isLive && liveData.confidence != null ? Math.round(liveData.confidence * 100) : scenario.confidence;
-  const activeValence = isLive && liveData.valence != null ? Number(liveData.valence).toFixed(2) : scenario.valence;
-  const activeArousal = isLive && liveData.arousal != null ? Number(liveData.arousal).toFixed(2) : scenario.arousal;
+  const activeEmotion = isLive && liveData.emotion ? (liveData.emotion.charAt(0).toUpperCase() + liveData.emotion.slice(1)) : (scenario?.label || 'Neutral');
+  const activeConfidence = isLive && liveData.confidence != null ? Math.round(liveData.confidence * 100) : (scenario?.confidence ?? 85);
+  const activeValence = isLive && liveData.valence != null ? Number(liveData.valence).toFixed(2) : (scenario?.valence != null ? Number(scenario.valence).toFixed(2) : '0.05');
+  const activeArousal = isLive && liveData.arousal != null ? Number(liveData.arousal).toFixed(2) : (scenario?.arousal != null ? Number(scenario.arousal).toFixed(2) : '0.10');
   const activeAssistantMsg = (isLive && liveData.assistant_message)
     ? liveData.assistant_message
     : (isLive && liveData?.context?.assistantSpeech)
       ? liveData.context.assistantSpeech
-      : scenario.assistantMessage;
+      : (scenario?.assistantMessage || 'Standing by for instructions.');
   const activePersonName = liveData?.person?.name || 'User';
   const activePersonRole = liveData?.person?.role || 'Lead Researcher';
 
