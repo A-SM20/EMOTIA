@@ -20,7 +20,7 @@ from typing import Optional, Tuple
 
 
 class StreamCapture:
-    def __init__(self, source: str = "http://192.168.1.100:81/stream", width: int = 640, height: int = 480, rotate_angle: int = 90):
+    def __init__(self, source: str = "http://10.150.189.242:81/stream", width: int = 640, height: int = 480, rotate_angle: int = 0):
         self.source = source
         self.width = width
         self.height = height
@@ -81,8 +81,7 @@ class StreamCapture:
             if rotate_angle is not None:
                 self.rotate_angle = rotate_angle
             elif s_str.startswith("http://") or s_str.startswith("https://"):
-                # Default 90 degree clockwise rotation for sideways ESP32-CAM head mount
-                self.rotate_angle = 90
+                self.rotate_angle = 0
             else:
                 self.rotate_angle = 0
             self._connected = False

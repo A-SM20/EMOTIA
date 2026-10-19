@@ -42,7 +42,7 @@ export const SettingsModal = () => {
   } = useEmotion();
 
   const [activeTab, setActiveTab] = useState('hardware'); // 'hardware' | 'general'
-  const [streamUrl, setStreamUrl] = useState('0');
+  const [streamUrl, setStreamUrl] = useState('http://10.150.189.242:81/stream');
   const [transportMode, setTransportMode] = useState('serial');
   const [esp32Ip, setEsp32Ip] = useState('192.168.1.100');
   const [comPort, setComPort] = useState('COM3');
@@ -223,10 +223,10 @@ export const SettingsModal = () => {
                   Synthetic Feed
                 </button>
                 <button
-                  onClick={() => handleApplyStream('http://192.168.1.100:81/stream')}
-                  className="px-2 py-0.5 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 rounded border border-white/[0.08]"
+                  onClick={() => handleApplyStream('http://10.150.189.242:81/stream')}
+                  className="px-2 py-0.5 bg-cyan-950/60 hover:bg-cyan-900/80 text-cyan-300 rounded border border-cyan-500/30 font-semibold"
                 >
-                  ESP32-CAM WiFi
+                  ESP32-CAM (10.150.189.242)
                 </button>
               </div>
             </div>

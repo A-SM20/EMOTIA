@@ -60,7 +60,7 @@ app.add_middleware(
 )
 
 # ── Global Engines ───────────────────────────────────────────────────────────
-stream_capture  = StreamCapture(source="synthetic", width=640, height=480)
+stream_capture  = StreamCapture(source="http://10.150.189.242:81/stream", width=640, height=480)
 face_detector   = FaceDetector()
 eye_fatigue     = EyeFatigueDetector()
 speech_detector = SpeechEmotionDetector()
