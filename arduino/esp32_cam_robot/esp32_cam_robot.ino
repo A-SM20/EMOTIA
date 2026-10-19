@@ -61,10 +61,9 @@
 #define OLED_RESET        -1
 #define SCREEN_ADDRESS  0x3C
 
-// Wi-Fi Configuration (Adjust for your local lab or desk router)
-const char* WIFI_SSID = "EMOTIA_ROBOT";
-const char* WIFI_PASS = "emotia2026";
-bool ap_mode = true; // Defaults to self-hosted AP if no router available
+// Wi-Fi Configuration (Connects to your phone hotspot or router)
+const char* ssid     = "OnePlus 13 B19C";
+const char* password = "password1234";
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 WebServer server(80);
@@ -127,10 +126,12 @@ void drawSingleEye(int cx, int cy, float gx, float gy, bool blink, const char* e
 }
 
 void renderEyes() {
+#if defined(ENABLE_CAM_OLED)
   display.clearDisplay();
   drawSingleEye(LEFT_EYE_CX, EYE_CY, eyes.gazeX, eyes.gazeY, eyes.isBlinking, eyes.emotion);
   drawSingleEye(RIGHT_EYE_CX, EYE_CY, eyes.gazeX, eyes.gazeY, eyes.isBlinking, eyes.emotion);
   display.display();
+#endif
 }
 
 // ==============================================================================
@@ -199,18 +200,11 @@ void handlePostEyes() {
 // ==============================================================================
 void setup() {
   Serial.begin(115200);
+  delay(100);
   pinMode(FLASH_LED_PIN, OUTPUT);
   digitalWrite(FLASH_LED_PIN, LOW); // Keep flash LED off to free shared IO4
 
-  // Initialize I2C for OLED display
-  Wire.begin(OLED_SDA_PIN, OLED_SCL_PIN);
-  if (display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
-    display.clearDisplay();
-    display.display();
-    renderEyes();
-  }
-
-  // Camera Configuration
+  // 1. Initialize Camera FIRST before any I2C peripherals
   camera_config_t config;
   config.ledc_channel = LEDC_CHANNEL_0;
   config.ledc_timer = LEDC_TIMER_0;
@@ -246,12 +240,48 @@ void setup() {
   esp_err_t err = esp_camera_init(&config);
   if (err != ESP_OK) {
     Serial.printf("[ESP32-CAM] Camera init failed with error 0x%x\n", err);
+  } else {
+    Serial.println("[ESP32-CAM] Camera initialized successfully [OK]");
   }
 
-  // Start Wi-Fi Access Point (Hotspot for easy plug-and-play)
-  WiFi.softAP(WIFI_SSID, WIFI_PASS);
-  IPAddress IP = WiFi.softAPIP();
-  Serial.printf("[ESP32-CAM] Hotspot created: %s, IP: %s\n", WIFI_SSID, IP.toString().c_str());
+  // 2. Optional: Initialize I2C for OLED visor only if display is attached
+  // (Skip if OLED is hosted on the Regular ESP32 master)
+  #if defined(ENABLE_CAM_OLED)
+  Wire.begin(OLED_SDA_PIN, OLED_SCL_PIN);
+  if (display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
+    display.clearDisplay();
+    display.display();
+    renderEyes();
+  }
+  #endif
+
+  // 3. Connect to Wi-Fi Hotspot (Station Mode)
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+  WiFi.setSleep(false); // Disable Wi-Fi sleep for max frame rate
+
+  Serial.printf("\n[ESP32-CAM] Connecting to Wi-Fi '%s' ", ssid);
+  int attempts = 0;
+  while (WiFi.status() != WL_CONNECTED && attempts < 25) {
+    delay(500);
+    Serial.print(".");
+    attempts++;
+  }
+
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.println("\n[ESP32-CAM] Wi-Fi Connected successfully! [OK]");
+    Serial.print("[ESP32-CAM] IP Address: ");
+    Serial.println(WiFi.localIP());
+    Serial.printf("[ESP32-CAM] MJPEG Stream URL: http://%s:81/stream\n", WiFi.localIP().toString().c_str());
+  } else {
+    // Fallback: Start self-hosted Access Point if phone hotspot is unavailable
+    Serial.println("\n[ESP32-CAM] Hotspot not found. Starting Access Point fallback: 'EMOTIA_ROBOT'...");
+    WiFi.mode(WIFI_AP);
+    WiFi.softAP("EMOTIA_ROBOT", "emotia2026");
+    IPAddress IP = WiFi.softAPIP();
+    Serial.printf("[ESP32-CAM] Hotspot IP: %s\n", IP.toString().c_str());
+    Serial.printf("[ESP32-CAM] MJPEG Stream URL: http://%s:81/stream\n", IP.toString().c_str());
+  }
 
   // Set up HTTP Endpoints
   server.on("/api/eyes", HTTP_POST, handlePostEyes);
