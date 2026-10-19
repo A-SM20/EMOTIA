@@ -175,30 +175,33 @@ class StreamCapture:
             bytes_data = bytes()
 
             while self._is_running and self.source == url:
-                chunk = stream.read(1024)
+                chunk = stream.read(4096)
                 if not chunk:
                     break
                 bytes_data += chunk
-                a = bytes_data.find(b'\xff\xd8')
-                b = bytes_data.find(b'\xff\xd9')
-                if a != -1 and b != -1:
-                    jpg = bytes_data[a:b+2]
-                    bytes_data = bytes_data[b+2:]
-                    frame = cv2.imdecode(np.frombuffer(jpg, dtype=np.uint8), cv2.IMREAD_COLOR)
-                    if frame is not None:
-                        # Fix 90 deg sideways camera mount orientation if requested
-                        if self.rotate_angle == 90:
-                            frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
-                        elif self.rotate_angle == 180:
-                            frame = cv2.rotate(frame, cv2.ROTATE_180)
-                        elif self.rotate_angle == 270:
-                            frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
 
-                        if frame.shape[1] != self.width or frame.shape[0] != self.height:
-                            frame = cv2.resize(frame, (self.width, self.height))
-                        with self._lock:
-                            self._latest_frame = frame
-                            self._frame_count += 1
+                # Always jump to the most recent frame in the buffer to eliminate cumulative lag
+                b = bytes_data.rfind(b'\xff\xd9')
+                if b != -1:
+                    a = bytes_data.rfind(b'\xff\xd8', 0, b)
+                    if a != -1:
+                        jpg = bytes_data[a:b+2]
+                        bytes_data = bytes_data[b+2:]
+                        frame = cv2.imdecode(np.frombuffer(jpg, dtype=np.uint8), cv2.IMREAD_COLOR)
+                        if frame is not None:
+                            # Fix camera orientation if requested
+                            if self.rotate_angle == 90:
+                                frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
+                            elif self.rotate_angle == 180:
+                                frame = cv2.rotate(frame, cv2.ROTATE_180)
+                            elif self.rotate_angle == 270:
+                                frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
+
+                            if frame.shape[1] != self.width or frame.shape[0] != self.height:
+                                frame = cv2.resize(frame, (self.width, self.height))
+                            with self._lock:
+                                self._latest_frame = frame
+                                self._frame_count += 1
             return True
         except Exception as e:
             # Failed to read or connect

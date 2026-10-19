@@ -162,7 +162,7 @@ void handleMjpegStream() {
     client.print(buf);
     client.write(fb->buf, fb->len);
     esp_camera_fb_return(fb);
-    delay(25); // ~30-40 FPS
+    delay(10); // Low latency ~35-40 FPS
   }
 }
 
@@ -228,11 +228,11 @@ void setup() {
   config.pixel_format = PIXFORMAT_JPEG;
 
   if (psramFound()) {
-    config.frame_size = FRAMESIZE_VGA;   // 640x480
+    config.frame_size = FRAMESIZE_HVGA;  // 480x320 (Smooth, low-latency)
     config.jpeg_quality = 12;
     config.fb_count = 2;
   } else {
-    config.frame_size = FRAMESIZE_QVGA;  // 320x240
+    config.frame_size = FRAMESIZE_HVGA;  // 480x320
     config.jpeg_quality = 14;
     config.fb_count = 1;
   }
@@ -242,6 +242,11 @@ void setup() {
     Serial.printf("[ESP32-CAM] Camera init failed with error 0x%x\n", err);
   } else {
     Serial.println("[ESP32-CAM] Camera initialized successfully [OK]");
+    sensor_t *s = esp_camera_sensor_get();
+    if (s != NULL) {
+      s->set_framesize(s, FRAMESIZE_HVGA); // Ensure 480x320 HVGA resolution
+      s->set_contrast(s, -1);              // Decrease contrast slightly (-2 to 2)
+    }
   }
 
   // 2. Optional: Initialize I2C for OLED visor only if display is attached
