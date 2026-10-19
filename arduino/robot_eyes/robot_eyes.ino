@@ -1,13 +1,13 @@
 /*
  * robot_eyes.ino — Animated Robot Eyes for EMOTIA Desk Robot
- * Hardware: Arduino Nano (ATmega328P) + 0.96" I2C OLED (SSD1306 128x64)
+ * Hardware: Regular ESP32 (or Arduino Nano) + 0.96" I2C OLED (SSD1306 128x64)
  * 
- * Pin Connections:
- *   Nano 5V  -> OLED VCC (or 3.3V)
- *   Nano GND -> OLED GND
- *   Nano A4  -> OLED SDA
- *   Nano A5  -> OLED SCL
- *   Nano USB -> Internal USB 2.0 Hub -> PC
+ * Pin Connections for Regular ESP32:
+ *   OLED GND     -> ESP32 GND
+ *   OLED VCC     -> ESP32 3V3 (or VIN 5V)
+ *   OLED CSK/SCL -> ESP32 GPIO 22 (D22)
+ *   OLED SDA     -> ESP32 GPIO 21 (D21)
+ *   ESP32 USB    -> PC (115200 baud Serial)
  *
  * Required Arduino Libraries:
  *   - Adafruit SSD1306
@@ -48,10 +48,20 @@ unsigned long lastIdleBlink = 0;
 
 void setup() {
   Serial.begin(115200);
-  
+  delay(100);
+
+#if defined(ESP32)
+  // Explicitly map ESP32 hardware I2C pins: SDA=21, SCL=22
+  Wire.begin(21, 22);
+#else
+  Wire.begin();
+#endif
+
   if (!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
     // Try alternate I2C address if 0x3C fails
-    display.begin(SSD1306_SWITCHCAPVCC, 0x3D);
+    if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3D)) {
+      Serial.println(F("[OLED] Error: SSD1306 allocation failed. Check wiring (D21=SDA, D22=SCL)!"));
+    }
   }
 
   display.clearDisplay();
@@ -64,6 +74,7 @@ void setup() {
   display.setCursor(34, 38);
   display.println(F("ONLINE"));
   display.display();
+  Serial.println(F("[OLED] EMOTIA Robot Eyes online. Listening on Serial @ 115200 baud..."));
   delay(1200);
 }
 
