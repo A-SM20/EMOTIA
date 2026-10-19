@@ -120,6 +120,10 @@ class HardwareController:
             "happy": "happy_arc",
             "calm": "focused",
             "neutral": "round",
+            "fatigued": "drowsy",
+            "drowsy": "drowsy",
+            "thinking": "thinking",
+            "surprised": "surprised",
         }
         eye_style = style_map.get(emotion, "round")
 
