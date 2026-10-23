@@ -45,7 +45,7 @@ export const SettingsModal = () => {
   const [streamUrl, setStreamUrl] = useState('http://10.150.189.242:81/stream');
   const [transportMode, setTransportMode] = useState('serial');
   const [esp32Ip, setEsp32Ip] = useState('192.168.1.100');
-  const [comPort, setComPort] = useState('COM3');
+  const [comPort, setComPort] = useState('COM6');
   const [servoAngle, setServoAngle] = useState(90);
   const [servoMode, setServoMode] = useState('both');
   const [lightMode, setLightMode] = useState('circadian');
@@ -249,9 +249,9 @@ export const SettingsModal = () => {
                   onChange={(e) => setTransportMode(e.target.value)}
                   className="bg-[#121215] border border-white/[0.1] rounded-lg px-2.5 py-1.5 text-xs font-mono text-zinc-200 focus:outline-none"
                 >
+                  <option value="wifi">ESP32 Wi-Fi (Wireless UDP/HTTP)</option>
                   <option value="serial">USB Serial COM (Active)</option>
                   <option value="sim">Virtual Simulation</option>
-                  <option value="http">ESP32 HTTP REST</option>
                 </select>
 
                 <div className="flex space-x-1.5 sm:col-span-2">
@@ -259,7 +259,7 @@ export const SettingsModal = () => {
                     type="text"
                     value={comPort}
                     onChange={(e) => setComPort(e.target.value)}
-                    placeholder="COM3"
+                    placeholder="COM6"
                     disabled={transportMode !== 'serial'}
                     className="w-24 bg-[#121215] border border-white/[0.1] rounded-lg px-2 py-1.5 text-xs font-mono text-zinc-200 disabled:opacity-40"
                   />
@@ -267,8 +267,8 @@ export const SettingsModal = () => {
                     type="text"
                     value={esp32Ip}
                     onChange={(e) => setEsp32Ip(e.target.value)}
-                    placeholder="ESP32 IP"
-                    disabled={transportMode !== 'http'}
+                    placeholder="10.150.189.xxx"
+                    disabled={transportMode !== 'wifi' && transportMode !== 'http'}
                     className="flex-1 bg-[#121215] border border-white/[0.1] rounded-lg px-2.5 py-1.5 text-xs font-mono text-zinc-200 disabled:opacity-40"
                   />
                   <button
@@ -301,19 +301,36 @@ export const SettingsModal = () => {
 
               {/* Eye Emotion Testing */}
               <div className="space-y-1.5">
-                <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400">Test Eye Emotion Presets:</span>
-                <div className="grid grid-cols-5 gap-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400">Test Emotion Personas (13 Total):</span>
+                  <button
+                    onClick={() => handleEyeTest('demo', 0.0, 0.0, 0, 'demo')}
+                    className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/30 hover:bg-amber-500/20 transition-colors"
+                  >
+                    Auto Demo Cycle
+                  </button>
+                </div>
+                <div className="grid grid-cols-4 sm:grid-cols-7 gap-1.5">
                   {[
-                    { id: 'calm', label: 'Calm', style: 'focused', color: 'hover:border-emerald-500/50' },
-                    { id: 'happy', label: 'Happy', style: 'joy', color: 'hover:border-amber-500/50' },
-                    { id: 'neutral', label: 'Neutral', style: 'wide', color: 'hover:border-zinc-500/50' },
-                    { id: 'frustrated', label: 'Frustrated', style: 'droop', color: 'hover:border-rose-500/50' },
-                    { id: 'stressed', label: 'Stressed', style: 'wide', color: 'hover:border-purple-500/50' },
+                    { id: 'neutral', label: 'Neutral', color: 'hover:border-zinc-400' },
+                    { id: 'happy', label: 'Happy ^ ^', color: 'hover:border-amber-400 text-amber-300' },
+                    { id: 'love', label: 'Love <3', color: 'hover:border-pink-400 text-pink-300' },
+                    { id: 'frustrated', label: 'Angry > <', color: 'hover:border-rose-400 text-rose-300' },
+                    { id: 'stressed', label: 'Stressed O_O', color: 'hover:border-purple-400 text-purple-300' },
+                    { id: 'calm', label: 'Calm Zen', color: 'hover:border-emerald-400 text-emerald-300' },
+                    { id: 'fatigued', label: 'Fatigued', color: 'hover:border-orange-400 text-orange-300' },
+                    { id: 'sleep', label: 'Sleep Zzz', color: 'hover:border-blue-400 text-blue-300' },
+                    { id: 'sad', label: 'Sad T_T', color: 'hover:border-indigo-400 text-indigo-300' },
+                    { id: 'dizzy', label: 'Dizzy @ @', color: 'hover:border-yellow-400 text-yellow-300' },
+                    { id: 'surprised', label: 'Surprised !', color: 'hover:border-teal-400 text-teal-300' },
+                    { id: 'thinking', label: 'Thinking ...', color: 'hover:border-cyan-400 text-cyan-300' },
+                    { id: 'scan', label: 'Visor Scan', color: 'hover:border-red-400 text-red-300' },
+                    { id: 'wink', label: 'Wink ✦', color: 'hover:border-yellow-300 text-yellow-200' },
                   ].map((emo) => (
                     <button
                       key={emo.id}
-                      onClick={() => handleEyeTest(emo.id, 0.0, 0.0, 0, emo.style)}
-                      className={`py-1.5 px-1 bg-zinc-950/70 text-zinc-300 rounded border border-white/[0.08] text-[11px] font-mono capitalize transition-all ${emo.color}`}
+                      onClick={() => handleEyeTest(emo.id, 0.0, 0.0, 0, emo.id)}
+                      className={`py-1.5 px-1 bg-zinc-950/70 text-zinc-300 rounded border border-white/[0.08] text-[10px] font-mono transition-all text-center ${emo.color}`}
                     >
                       {emo.label}
                     </button>
@@ -326,31 +343,31 @@ export const SettingsModal = () => {
                 <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400">Test Gaze Tracking & Blink:</span>
                 <div className="flex items-center space-x-2 flex-wrap gap-y-1.5">
                   <button
-                    onClick={() => handleEyeTest('calm', -0.85, 0.0, 0, 'focused')}
+                    onClick={() => handleEyeTest('neutral', -0.85, 0.0, 0, 'neutral')}
                     className="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-mono rounded border border-white/[0.08]"
                   >
                     Look Left
                   </button>
                   <button
-                    onClick={() => handleEyeTest('calm', 0.0, 0.0, 0, 'focused')}
+                    onClick={() => handleEyeTest('neutral', 0.0, 0.0, 0, 'neutral')}
                     className="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-mono rounded border border-white/[0.08]"
                   >
                     Center Gaze
                   </button>
                   <button
-                    onClick={() => handleEyeTest('calm', 0.85, 0.0, 0, 'focused')}
+                    onClick={() => handleEyeTest('neutral', 0.85, 0.0, 0, 'neutral')}
                     className="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-mono rounded border border-white/[0.08]"
                   >
                     Look Right
                   </button>
                   <button
-                    onClick={() => handleEyeTest('calm', 0.0, -0.75, 0, 'focused')}
+                    onClick={() => handleEyeTest('neutral', 0.0, -0.75, 0, 'neutral')}
                     className="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-mono rounded border border-white/[0.08]"
                   >
                     Look Up
                   </button>
                   <button
-                    onClick={() => handleEyeTest('calm', 0.0, 0.0, 1, 'focused')}
+                    onClick={() => handleEyeTest('neutral', 0.0, 0.0, 1, 'neutral')}
                     className="px-2.5 py-1 bg-cyan-950/60 hover:bg-cyan-900/80 text-cyan-300 text-xs font-mono rounded border border-cyan-500/40"
                   >
                     Trigger Blink

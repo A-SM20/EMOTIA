@@ -1,13 +1,13 @@
 {
   "user_id": "ID_ALEX_01",
-  "timestamp": 1792341277.8215106,
-  "calibration_samples": 2400,
+  "timestamp": 1792751544.218903,
+  "calibration_samples": 0,
   "baseline_means": {
     "AU4": 0.05,
     "AU12": 0.05,
-    "AU15": 0.05799850558836997,
-    "AU7": 0.07552995942279885,
-    "EAR": 0.1690414536597289
+    "AU15": 0.05,
+    "AU7": 0.05,
+    "EAR": 0.3
   },
   "anchor_baseline": {
     "AU4": 0.05,
@@ -17,12 +17,12 @@
     "EAR": 0.3
   },
   "emotion_bias": {
-    "frustrated": -0.02,
-    "stressed": -0.02,
-    "happy": 0.04,
-    "calm": 0.04,
-    "neutral": -0.02
+    "frustrated": -0.01,
+    "stressed": -0.01,
+    "happy": -0.01,
+    "calm": 0.05,
+    "neutral": -0.01
   },
   "plasticity_index": 0.85,
-  "stability_index": 0.934
+  "stability_index": 0.94
 }

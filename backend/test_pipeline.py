@@ -20,7 +20,7 @@ from hardware_controller import HardwareController
 from fusion import fuse
 
 
-def test_stream_capture():
+def _run_stream_capture():
     print("[TEST 1/7] Testing StreamCapture (Synthetic Mode)...")
     capture = StreamCapture(source="synthetic", width=640, height=480)
     capture.start()
@@ -37,8 +37,10 @@ def test_stream_capture():
     return frame
 
 
-def test_face_detector(frame):
+def _run_face_detector(frame=None):
     print("[TEST 2/7] Testing FaceDetector (MediaPipe FaceMesh + Action Units)...")
+    if frame is None:
+        frame = np.zeros((480, 640, 3), dtype=np.uint8)
     detector = FaceDetector()
     res, annotated = detector.process_frame(frame, draw_overlay=True)
 
@@ -55,7 +57,7 @@ def test_face_detector(frame):
     return res
 
 
-def test_continual_learning():
+def _run_continual_learning():
     print("[TEST 3/7] Testing ContinualLearningEngine...")
     cl = ContinualLearningEngine(user_id="TEST_USER_01")
     au_sample = {"AU4": 0.12, "AU12": 0.08, "AU15": 0.05, "AU7": 0.04}
@@ -77,7 +79,7 @@ def test_continual_learning():
     return telemetry
 
 
-def test_context_engine():
+def _run_context_engine():
     print("[TEST 4/7] Testing ContextAwareEngine (Cognitive Load & Policy)...")
     ce = ContextAwareEngine()
     ce.set_context("Programming • PyTorch", "VS Code", "Debugging tensor shape mismatch")
@@ -95,8 +97,12 @@ def test_context_engine():
     return eval_res
 
 
-def test_xai_engine(eval_res, cl_telemetry):
+def _run_xai_engine(eval_res=None, cl_telemetry=None):
     print("[TEST 5/7] Testing XAIEngine (Feature Attributions & Explanations)...")
+    if eval_res is None:
+        eval_res = {"cognitiveLoadIndex": 85, "workState": "Cognitive Overload", "policyAction": "Suggest short break"}
+    if cl_telemetry is None:
+        cl_telemetry = {"calibration_samples": 50, "stability_index": 0.95}
     xai = XAIEngine()
     fused_state = {"emotion": "frustrated", "confidence": 0.87}
     face_state = {"action_units": {"AU4": 0.82, "AU12": 0.05, "AU15": 0.72, "AU7": 0.55}}
@@ -115,7 +121,7 @@ def test_xai_engine(eval_res, cl_telemetry):
     print(f"  [OK] XAIEngine passed (Attribution Sum: {total_pct}%, Factors: {len(xai_res['contributingFactors'])})")
 
 
-def test_hardware_controller():
+def _run_hardware_controller():
     print("[TEST 6/7] Testing HardwareController (Servo & Light Multi-Transport)...")
     hw = HardwareController(transport="sim")
 
@@ -139,7 +145,7 @@ def test_hardware_controller():
     print(f"  [OK] HardwareController passed (Servo: {hw.servo_angle}°, Light: {hw.light_mode} @ {hw.light_brightness}%)")
 
 
-def test_fusion():
+def _run_fusion():
     print("[TEST 7/7] Testing Fusion Engine...")
     face_res = {"detected": True, "emotion": "frustrated", "confidence": 0.85}
     speech_res = {"active": True, "emotion": "stressed", "confidence": 0.75}
@@ -153,17 +159,45 @@ def test_fusion():
     print(f"  [OK] Fusion passed (Fused: {fused['emotion']}, Conf: {fused['confidence']}, V: {fused['valence']}, A: {fused['arousal']})")
 
 
+# ── Pytest Test Wrappers (Return None) ────────────────────────────────────────
+
+def test_stream_capture():
+    frame = _run_stream_capture()
+    assert frame is not None
+
+def test_face_detector():
+    res = _run_face_detector()
+    assert res is not None
+
+def test_continual_learning():
+    telem = _run_continual_learning()
+    assert telem is not None
+
+def test_context_engine():
+    res = _run_context_engine()
+    assert res is not None
+
+def test_xai_engine():
+    _run_xai_engine()
+
+def test_hardware_controller():
+    _run_hardware_controller()
+
+def test_fusion():
+    _run_fusion()
+
+
 if __name__ == "__main__":
     print("=" * 60)
     print("STARTING EMOTIA BACKEND UNIT & INTEGRATION TESTS")
     print("=" * 60)
-    f = test_stream_capture()
-    face_res = test_face_detector(f)
-    cl_res = test_continual_learning()
-    eval_res = test_context_engine()
-    test_xai_engine(eval_res, cl_res)
-    test_hardware_controller()
-    test_fusion()
+    f = _run_stream_capture()
+    face_res = _run_face_detector(f)
+    cl_res = _run_continual_learning()
+    eval_res = _run_context_engine()
+    _run_xai_engine(eval_res, cl_res)
+    _run_hardware_controller()
+    _run_fusion()
     print("=" * 60)
     print("ALL 7 BACKEND SUBSYSTEM TESTS PASSED SUCCESSFULLY! [OK]")
     print("=" * 60)

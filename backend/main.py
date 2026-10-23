@@ -26,6 +26,7 @@ os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
 
 import asyncio
+from contextlib import asynccontextmanager
 import json
 import time
 import threading
@@ -49,15 +50,6 @@ from fusion import fuse
 from conversation_engine import ConversationEngine
 from memory_engine import MemoryEngine
 
-# ── App Setup ────────────────────────────────────────────────────────────────
-app = FastAPI(title="EMOTIA Live Pipeline", version="2.0.0")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 # ── Global Engines ───────────────────────────────────────────────────────────
 stream_capture  = StreamCapture(source="http://10.150.189.242:81/stream", width=640, height=480)
@@ -111,6 +103,9 @@ _latest_state: Dict[str, Any] = {
 }
 
 
+_pipeline_running = True
+
+
 # ── Background Pipeline Orchestrator Thread ──────────────────────────────────
 def _pipeline_orchestrator():
     """
@@ -120,7 +115,7 @@ def _pipeline_orchestrator():
     print("[orchestrator] EMOTIA live pipeline orchestrator started [OK]")
     stream_capture.start()
 
-    while True:
+    while _pipeline_running:
         ret, frame = stream_capture.get_latest_frame()
         if not ret or frame is None:
             time.sleep(0.015)
@@ -234,9 +229,11 @@ def _pipeline_orchestrator():
         time.sleep(0.015)  # yield slice (~40–50 Hz pipeline cadence)
 
 
-# ── Startup ───────────────────────────────────────────────────────────────────
-@app.on_event("startup")
-async def startup():
+# ── Application Lifespan & Teardown ──────────────────────────────────────────
+@asynccontextmanager
+async def lifespan(app_instance: FastAPI):
+    global _pipeline_running
+    _pipeline_running = True
     # Start microphone capture
     speech_detector.start()
 
@@ -244,6 +241,23 @@ async def startup():
     t = threading.Thread(target=_pipeline_orchestrator, daemon=True)
     t.start()
     print("[EMOTIA] All live engines initialized and running [OK]")
+    yield
+    # Graceful shutdown
+    _pipeline_running = False
+    speech_detector.stop()
+    stream_capture.stop()
+    print("[EMOTIA] All live engines shut down cleanly [OK]")
+
+
+# ── App Setup ────────────────────────────────────────────────────────────────
+app = FastAPI(title="EMOTIA Live Pipeline", version="2.0.0", lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 # ── REST API Endpoints ────────────────────────────────────────────────────────
@@ -312,13 +326,25 @@ async def get_active_person():
 class StreamConfigRequest(BaseModel):
     source: str  # URL or '0' or 'synthetic'
     rotate_angle: Optional[int] = None
+    flip_horizontal: Optional[bool] = None
 
 
 @app.post("/api/stream/config")
 async def config_stream(req: StreamConfigRequest):
     """Switch stream source (e.g. ESP32-CAM URL, local webcam, synthetic)."""
-    stream_capture.set_source(req.source, req.rotate_angle)
-    return {"status": "ok", "source": req.source, "rotation": stream_capture.rotate_angle}
+    stream_capture.set_source(req.source, req.rotate_angle, req.flip_horizontal)
+    return {"status": "ok", "source": req.source, "rotation": stream_capture.rotate_angle, "flip_horizontal": stream_capture.flip_horizontal}
+
+
+class StreamFlipRequest(BaseModel):
+    flip_horizontal: bool
+
+
+@app.post("/api/stream/flip")
+async def toggle_stream_flip(req: StreamFlipRequest):
+    """Toggle horizontal flip (left-to-right mirror mode)."""
+    stream_capture.set_flip_horizontal(req.flip_horizontal)
+    return {"status": "ok", "flip_horizontal": stream_capture.flip_horizontal}
 
 
 class HardwareControlRequest(BaseModel):
@@ -373,11 +399,19 @@ class HardwareTransportRequest(BaseModel):
     com_port: Optional[str] = None
 
 
+@app.get("/api/hardware/ports")
+async def get_hardware_ports():
+    """List detected COM ports for regular ESP32 / Arduino."""
+    from hardware_controller import HardwareController, find_esp32_port
+    return {"status": "ok", "ports": HardwareController.list_ports(), "detected_esp32": find_esp32_port()}
+
+
 @app.post("/api/hardware/transport")
 async def config_hardware_transport(req: HardwareTransportRequest):
     """Update hardware communication transport."""
-    hardware_ctrl.set_transport(req.transport, req.esp32_ip, req.com_port)
+    hardware_ctrl.set_transport(req.transport, com_port=req.com_port, esp32_ip=req.esp32_ip)
     return {"status": "ok", "hardware": hardware_ctrl.get_telemetry()}
+
 
 
 class ContextRequest(BaseModel):

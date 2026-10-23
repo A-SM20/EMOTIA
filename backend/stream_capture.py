@@ -20,11 +20,12 @@ from typing import Optional, Tuple
 
 
 class StreamCapture:
-    def __init__(self, source: str = "http://10.150.189.242:81/stream", width: int = 640, height: int = 480, rotate_angle: int = 0):
+    def __init__(self, source: str = "http://10.150.189.242:81/stream", width: int = 640, height: int = 480, rotate_angle: int = 0, flip_horizontal: bool = True):
         self.source = source
         self.width = width
         self.height = height
         self.rotate_angle = rotate_angle
+        self.flip_horizontal = flip_horizontal
 
         self._lock = threading.Lock()
         self._latest_frame: Optional[np.ndarray] = None
@@ -71,7 +72,7 @@ class StreamCapture:
             self._thread.join(timeout=1.0)
         print("[stream_capture] Capture stopped")
 
-    def set_source(self, new_source: str, rotate_angle: Optional[int] = None):
+    def set_source(self, new_source: str, rotate_angle: Optional[int] = None, flip_horizontal: Optional[bool] = None):
         """Dynamically switch stream source without restarting backend."""
         with self._lock:
             s_str = str(new_source).strip()
@@ -84,8 +85,16 @@ class StreamCapture:
                 self.rotate_angle = 0
             else:
                 self.rotate_angle = 0
+            if flip_horizontal is not None:
+                self.flip_horizontal = flip_horizontal
             self._connected = False
-        print(f"[stream_capture] Stream source switched to: {self.source} (rotation: {self.rotate_angle}°)")
+        print(f"[stream_capture] Stream source switched to: {self.source} (rotation: {self.rotate_angle}°, flip: {self.flip_horizontal})")
+
+    def set_flip_horizontal(self, flip: bool):
+        """Enable or disable horizontal left-to-right mirror flip."""
+        with self._lock:
+            self.flip_horizontal = flip
+        print(f"[stream_capture] Horizontal flip (mirror): {'ENABLED' if flip else 'DISABLED'}")
 
     def get_latest_frame(self) -> Tuple[bool, Optional[np.ndarray]]:
         """Return the most recent unanalyzed frame (thread-safe)."""
@@ -117,6 +126,7 @@ class StreamCapture:
                 "connected": self._connected,
                 "fps": round(self._fps, 1),
                 "frame_count": self._frame_count,
+                "flip_horizontal": self.flip_horizontal,
             }
 
     def _capture_loop(self):
@@ -197,6 +207,9 @@ class StreamCapture:
                             elif self.rotate_angle == 270:
                                 frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
 
+                            if self.flip_horizontal:
+                                frame = cv2.flip(frame, 1)
+
                             if frame.shape[1] != self.width or frame.shape[0] != self.height:
                                 frame = cv2.resize(frame, (self.width, self.height))
                             with self._lock:
@@ -241,6 +254,8 @@ class StreamCapture:
                     frame = cv2.rotate(frame, cv2.ROTATE_180)
                 elif self.rotate_angle == 270:
                     frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
+                if self.flip_horizontal:
+                    frame = cv2.flip(frame, 1)
                 with self._lock:
                     self._latest_frame = frame
                     self._frame_count += 1
@@ -337,6 +352,9 @@ class StreamCapture:
         cv2.putText(frame, header_text, (16, 28), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (220, 220, 220), 1, cv2.LINE_AA)
         timestamp_str = time.strftime("%H:%M:%S")
         cv2.putText(frame, f"REC: {timestamp_str}", (self.width - 140, 28), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 220, 180), 1, cv2.LINE_AA)
+
+        if self.flip_horizontal:
+            frame = cv2.flip(frame, 1)
 
         with self._lock:
             self._latest_frame = frame

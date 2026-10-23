@@ -32,3 +32,7 @@ venv/
 env/
 backend/backend/
 *.db
+.pytest_cache/
+pytest-cache-files-*/
+scratch/
+*.tmp
